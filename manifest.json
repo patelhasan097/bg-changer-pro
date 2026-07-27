@@ -1,0 +1,34 @@
+{
+  "name": "BG Changer Pro",
+  "short_name": "BG Changer",
+  "description": "Free batch background replacement tool. AI runs in browser. No API. No limit.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0B0B0E",
+  "theme_color": "#E8A838",
+  "orientation": "portrait-primary",
+  "categories": ["productivity", "photo"],
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "New Batch",
+      "short_name": "New Batch",
+      "description": "Naya batch start karo",
+      "url": "./"
+    }
+  ]
+}

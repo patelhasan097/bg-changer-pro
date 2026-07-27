@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>BG Changer Pro — Free Batch Background Tool</title>
+<meta name="description" content="1000+ images ke background free mein change karo. No API. No limit. AI runs in your browser."/>
+<meta name="theme-color" content="#0B0B0E"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icon.svg"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+<style>
+/* ── DESIGN TOKENS ─────────────────────────────────────────────────────────── */
+:root{
+  --bg:#0B0B0E;--surface:#131318;--surface-el:#1A1A21;--surface-hi:#222229;
+  --border:#262630;--border-s:#34343F;
+  --amber:#E8A838;--amber-d:#C4862A;--amber-glow:rgba(232,168,56,.13);--amber-border:rgba(232,168,56,.22);
+  --blue:#3B8BD4;--green:#3DAA6A;--red:#D45050;
+  --text:#EEEAE0;--text-m:#8A8880;--text-s:#55534F;
+  --r:10px;--r-lg:16px;--r-sm:7px;
+  --transition:0.18s ease;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100vh}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border-s);border-radius:3px}
+
+/* ── HEADER ────────────────────────────────────────────────────────────────── */
+.header{
+  position:sticky;top:0;z-index:100;
+  background:rgba(11,11,14,.88);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);
+  height:58px;padding:0 20px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.logo{
+  font-family:'Syne',sans-serif;font-size:17px;font-weight:800;
+  color:var(--amber);letter-spacing:-.4px;
+  display:flex;align-items:center;gap:7px;flex-shrink:0;
+}
+.logo-dot{width:7px;height:7px;border-radius:50%;background:var(--amber);animation:pulse 2.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.75)}}
+
+.step-nav{display:flex;align-items:center;gap:3px;overflow-x:auto;scrollbar-width:none}
+.step-nav::-webkit-scrollbar{display:none}
+.snav{
+  display:flex;align-items:center;gap:5px;
+  padding:4px 11px;border-radius:20px;
+  font-size:12px;font-weight:500;color:var(--text-s);
+  white-space:nowrap;transition:var(--transition);
+}
+.snav.active{background:var(--amber-glow);color:var(--amber);border:1px solid var(--amber-border)}
+.snav.done{color:var(--green)}
+.snav-num{
+  width:17px;height:17px;border-radius:50%;border:1.5px solid currentColor;
+  display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;
+}
+.snav.done .snav-num{background:var(--green);border-color:var(--green);color:#fff}
+.snav-sep{color:var(--border-s);font-size:11px;padding:0 1px}
+
+.free-pill{
+  flex-shrink:0;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;
+  background:rgba(61,170,106,.1);border:1px solid rgba(61,170,106,.25);color:var(--green);
+}
+
+/* ── MAIN ──────────────────────────────────────────────────────────────────── */
+.main{max-width:920px;margin:0 auto;padding:36px 20px 80px}
+
+/* ── SECTION ───────────────────────────────────────────────────────────────── */
+.sec{display:none}
+.sec.active{display:block}
+
+.sec-eyebrow{font-size:10.5px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;color:var(--amber);margin-bottom:7px}
+.sec-title{font-family:'Syne',sans-serif;font-size:27px;font-weight:800;letter-spacing:-.5px;color:var(--text);line-height:1.2}
+.sec-sub{font-size:13.5px;color:var(--text-m);margin-top:5px}
+.sec-hdr{margin-bottom:28px}
+
+/* ── UPLOAD ZONE ───────────────────────────────────────────────────────────── */
+.upload-zone{
+  border:1.5px dashed var(--border-s);border-radius:var(--r-lg);
+  background:var(--surface);padding:44px 28px;text-align:center;
+  cursor:pointer;transition:all var(--transition);position:relative;overflow:hidden;
+}
+.upload-zone::after{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,var(--amber-glow) 0%,transparent 65%);
+  pointer-events:none;opacity:0;transition:opacity var(--transition);
+}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--amber);background:var(--surface-el)}
+.upload-zone:hover::after,.upload-zone.drag::after{opacity:1}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0}
+.uz-icon{
+  width:52px;height:52px;margin:0 auto 14px;border-radius:var(--r);
+  background:var(--surface-el);border:1px solid var(--border-s);
+  display:flex;align-items:center;justify-content:center;font-size:22px;
+}
+.uz-title{font-size:15px;font-weight:500;color:var(--text);margin-bottom:5px}
+.uz-sub{font-size:12.5px;color:var(--text-m)}
+.uz-badge{
+  display:inline-block;margin-top:11px;padding:3px 11px;border-radius:20px;
+  background:var(--amber-glow);border:1px solid var(--amber-border);
+  color:var(--amber);font-size:11.5px;font-weight:500;
+}
+
+/* ── PREVIEW CARD ──────────────────────────────────────────────────────────── */
+.preview-card{
+  display:none;border-radius:var(--r-lg);overflow:hidden;
+  border:1px solid var(--border);background:var(--surface);margin-top:0;
+}
+.preview-card.show{display:block}
+.preview-card img{width:100%;height:200px;object-fit:cover;display:block}
+.preview-info{
+  padding:13px 18px;display:flex;align-items:center;justify-content:space-between;
+  border-top:1px solid var(--border);gap:12px;
+}
+.preview-name{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.preview-meta{font-size:11.5px;color:var(--text-m);margin-top:2px}
+
+/* ── BUTTONS ───────────────────────────────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  padding:10px 20px;border-radius:var(--r-sm);border:none;
+  font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer;
+  transition:all var(--transition);text-decoration:none;white-space:nowrap;
+}
+.btn-primary{background:var(--amber);color:#0B0B0E}
+.btn-primary:hover:not(:disabled){background:var(--amber-d);transform:translateY(-1px);box-shadow:0 4px 18px rgba(232,168,56,.28)}
+.btn-primary:active:not(:disabled){transform:translateY(0)}
+.btn-primary:disabled{opacity:.38;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-ghost{background:transparent;color:var(--text-m);border:1px solid var(--border-s)}
+.btn-ghost:hover{background:var(--surface-el);color:var(--text);border-color:var(--border-s)}
+.btn-lg{padding:13px 30px;font-size:15px}
+.ctrl{display:flex;align-items:center;gap:10px;margin-top:22px;flex-wrap:wrap}
+
+/* ── INFO ROWS ─────────────────────────────────────────────────────────────── */
+.divider{height:1px;background:var(--border);margin:28px 0}
+.info-row{display:flex;align-items:flex-start;gap:13px;padding:11px 0;border-bottom:1px solid var(--border)}
+.info-row:last-child{border-bottom:none}
+.ir-icon{font-size:15px;width:22px;flex-shrink:0;padding-top:1px}
+.ir-text{font-size:13px;color:var(--text-m);line-height:1.5}
+.ir-text strong{color:var(--text);font-weight:500}
+
+/* ── NOTICE ────────────────────────────────────────────────────────────────── */
+.notice{
+  padding:13px 16px;border-radius:var(--r);margin-bottom:18px;
+  display:flex;align-items:flex-start;gap:11px;
+}
+.notice.info{background:rgba(59,139,212,.08);border:1px solid rgba(59,139,212,.2)}
+.notice.warn{background:rgba(232,168,56,.08);border:1px solid var(--amber-border)}
+.notice-icon{font-size:16px;flex-shrink:0;padding-top:1px}
+.notice-text{font-size:12.5px;color:var(--text-m);line-height:1.55}
+.notice-text strong{color:var(--blue);font-weight:600}
+.notice.warn .notice-text strong{color:var(--amber)}
+
+/* ── COUNT BADGE ───────────────────────────────────────────────────────────── */
+.cnt-badge{
+  display:inline-block;padding:2px 9px;border-radius:20px;
+  font-size:12px;background:var(--surface-el);border:1px solid var(--border-s);color:var(--text-m);
+}
+.cnt-badge.filled{background:var(--amber-glow);border-color:var(--amber-border);color:var(--amber)}
+
+/* ── IMAGE GRID ────────────────────────────────────────────────────────────── */
+.img-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
+  gap:10px;margin-top:18px;
+}
+.img-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;position:relative;aspect-ratio:1;
+}
+.img-card img{width:100%;height:100%;object-fit:cover;display:block;transition:opacity .3s}
+.img-card-name{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:5px 7px;background:rgba(11,11,14,.85);
+  font-size:9.5px;color:var(--text-m);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.img-status{
+  position:absolute;top:7px;right:7px;
+  width:22px;height:22px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:11px;
+}
+.img-status.pending{background:rgba(50,50,55,.85);color:var(--text-s)}
+.img-status.proc{background:rgba(59,139,212,.92);color:#fff}
+.img-status.done{background:rgba(61,170,106,.92);color:#fff}
+.img-status.err{background:rgba(212,80,80,.92);color:#fff}
+
+/* ── PROGRESS ──────────────────────────────────────────────────────────────── */
+.prog-wrap{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:18px 20px;margin:22px 0;
+}
+.prog-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.prog-label{font-size:13.5px;font-weight:500;color:var(--text)}
+.prog-count{font-size:14px;font-weight:700;color:var(--amber)}
+.prog-track{height:5px;background:var(--surface-el);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--amber-d),var(--amber));border-radius:3px;transition:width .5s ease;width:0}
+.prog-sub{font-size:11.5px;color:var(--text-m);margin-top:8px;min-height:16px}
+
+/* ── STATUS PILL ───────────────────────────────────────────────────────────── */
+.pill{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:500;
+}
+.pill.proc{background:rgba(59,139,212,.12);color:var(--blue);border:1px solid rgba(59,139,212,.25)}
+.pill.done{background:rgba(61,170,106,.12);color:var(--green);border:1px solid rgba(61,170,106,.25)}
+
+/* ── DOWNLOAD ──────────────────────────────────────────────────────────────── */
+.dl-hero{
+  text-align:center;padding:44px 24px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+  margin-bottom:22px;
+}
+.dl-em{font-size:46px;margin-bottom:14px}
+.dl-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:5px}
+.dl-sub{font-size:13px;color:var(--text-m);margin-bottom:22px}
+
+/* ── RESULT CARDS ──────────────────────────────────────────────────────────── */
+.res-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.res-imgs{display:grid;grid-template-columns:1fr 1fr}
+.res-imgs img{width:100%;aspect-ratio:1;object-fit:cover;display:block}
+.res-imgs img:first-child{border-right:1px solid var(--border);opacity:.7}
+.res-footer{
+  padding:7px 10px;display:flex;align-items:center;gap:8px;
+  border-top:1px solid var(--border);
+}
+.res-name{flex:1;font-size:10px;color:var(--text-m);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── TOAST ─────────────────────────────────────────────────────────────────── */
+.toast-wrap{position:fixed;bottom:22px;right:22px;z-index:999;display:flex;flex-direction:column;gap:7px}
+.toast{
+  background:var(--surface-hi);border:1px solid var(--border-s);border-radius:var(--r);
+  padding:11px 15px;font-size:12.5px;color:var(--text);
+  display:flex;align-items:center;gap:9px;
+  box-shadow:0 8px 28px rgba(0,0,0,.45);max-width:300px;
+  animation:toastIn .28s ease;
+}
+@keyframes toastIn{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+.toast.ok{border-left:3px solid var(--green)}
+.toast.err{border-left:3px solid var(--red)}
+.toast.info{border-left:3px solid var(--blue)}
+
+/* ── SPINNER ───────────────────────────────────────────────────────────────── */
+.spin{
+  display:inline-block;width:12px;height:12px;flex-shrink:0;
+  border:1.8px solid rgba(255,255,255,.18);border-top-color:currentColor;
+  border-radius:50%;animation:rotate .65s linear infinite;
+}
+@keyframes rotate{to{transform:rotate(360deg)}}
+
+/* ── RESPONSIVE ────────────────────────────────────────────────────────────── */
+@media(max-width:580px){
+  .step-nav{display:none}
+  .main{padding:24px 14px 60px}
+  .sec-title{font-size:22px}
+  .img-grid{grid-template-columns:repeat(3,1fr);gap:8px}
+  .btn-lg{padding:11px 22px;font-size:14px}
+}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ─────────────────────────────────────────────────────────────── -->
+<header class="header">
+  <div class="logo"><div class="logo-dot"></div>BG Changer Pro</div>
+
+  <nav class="step-nav" id="stepNav">
+    <div class="snav active" data-s="1"><div class="snav-num">1</div><span>Background</span></div>
+    <span class="snav-sep">›</span>
+    <div class="snav" data-s="2"><div class="snav-num">2</div><span>Images</span></div>
+    <span class="snav-sep">›</span>
+    <div class="snav" data-s="3"><div class="snav-num">3</div><span>Processing</span></div>
+    <span class="snav-sep">›</span>
+    <div class="snav" data-s="4"><div class="snav-num">4</div><span>Download</span></div>
+  </nav>
+
+  <span class="free-pill">✓ Free Forever</span>
+</header>
+
+<!-- ── MAIN ───────────────────────────────────────────────────────────────── -->
+<main class="main">
+
+  <!-- STEP 1 ── Background Upload ─────────────────────────────────────────── -->
+  <section class="sec active" id="s1">
+    <div class="sec-hdr">
+      <div class="sec-eyebrow">Step 1 of 4</div>
+      <h1 class="sec-title">Background upload karo</h1>
+      <p class="sec-sub">Yeh woh background hai jo tumhari saari photos mein automatically lagegi.</p>
+    </div>
+
+    <div class="upload-zone" id="bgZone">
+      <input type="file" id="bgInput" accept="image/*"/>
+      <div class="uz-icon">🖼️</div>
+      <div class="uz-title">Background image yahan drop karo</div>
+      <div class="uz-sub">Ya click karke apni device se select karo</div>
+      <span class="uz-badge">JPG · PNG · WebP · BMP — any resolution</span>
+    </div>
+
+    <div class="preview-card" id="bgPreview">
+      <img id="bgPreviewImg" src="" alt="background preview"/>
+      <div class="preview-info">
+        <div style="min-width:0">
+          <div class="preview-name" id="bgName">—</div>
+          <div class="preview-meta" id="bgMeta">—</div>
+        </div>
+        <button class="btn btn-ghost" onclick="changeBg()">Change</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="info-row">
+      <span class="ir-icon">🤖</span>
+      <div class="ir-text"><strong>100% Automatic</strong> — background remove, shadow add, color blend, edges smooth — sab AI karta hai. Tumhe kuch bhi manually nahi karna.</div>
+    </div>
+    <div class="info-row">
+      <span class="ir-icon">🔒</span>
+      <div class="ir-text"><strong>Privacy 100%</strong> — tumhari images kabhi bhi internet pe nahi jaatein. AI tumhare browser ke andar hi run karta hai.</div>
+    </div>
+    <div class="info-row">
+      <span class="ir-icon">💸</span>
+      <div class="ir-text"><strong>Hamesha Free</strong> — koi API key nahi, koi monthly limit nahi, koi hidden charges nahi. Kabhi bhi, jitna chahiye utna use karo.</div>
+    </div>
+
+    <div class="ctrl">
+      <button class="btn btn-primary btn-lg" id="toBg2" disabled onclick="goStep(2)">
+        Next: Images Upload →
+      </button>
+    </div>
+  </section>
+
+  <!-- STEP 2 ── Images Upload ──────────────────────────────────────────────── -->
+  <section class="sec" id="s2">
+    <div class="sec-hdr">
+      <div class="sec-eyebrow">Step 2 of 4</div>
+      <h1 class="sec-title">Images upload karo <span class="cnt-badge" id="cntBadge">0 selected</span></h1>
+      <p class="sec-sub">Ek baar mein max 10 images. Baar baar karte raho — 1000+ bhi asaan hain.</p>
+    </div>
+
+    <div class="notice info" id="modelNotice">
+      <span class="notice-icon">💡</span>
+      <div class="notice-text">
+        <strong>Pehli baar: AI model download hoga (~50MB)</strong> — yeh ek hi baar hota hai. Browser cache kar leta hai. Uske baad instant kaam karta hai, internet bhi nahi chahiye.
+      </div>
+    </div>
+
+    <div class="upload-zone" id="imgZone">
+      <input type="file" id="imgInput" accept="image/*" multiple/>
+      <div class="uz-icon">📦</div>
+      <div class="uz-title">Apni images yahan drop karo</div>
+      <div class="uz-sub">Ek baar mein max 10 images — baar baar kar sakte ho</div>
+      <span class="uz-badge">Multiple select allowed · JPG · PNG · WebP</span>
+    </div>
+
+    <div class="img-grid" id="imgGrid"></div>
+
+    <div class="ctrl">
+      <button class="btn btn-ghost" onclick="goStep(1)">← Back</button>
+      <button class="btn btn-primary btn-lg" id="procBtn" disabled onclick="startProcess()">
+        ⚡ Process All — Automatic
+      </button>
+    </div>
+  </section>
+
+  <!-- STEP 3 ── Processing ─────────────────────────────────────────────────── -->
+  <section class="sec" id="s3">
+    <div class="sec-hdr">
+      <div class="sec-eyebrow">Step 3 of 4</div>
+      <h1 class="sec-title">
+        Processing <span class="pill proc" id="procPill"><span class="spin"></span> Running</span>
+      </h1>
+      <p class="sec-sub">AI background remove kar raha hai aur Realism Engine shadow + color blend laga raha hai.</p>
+    </div>
+
+    <div class="prog-wrap">
+      <div class="prog-hdr">
+        <span class="prog-label">Overall Progress</span>
+        <span class="prog-count" id="progCount">0 / 0</span>
+      </div>
+      <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+      <div class="prog-sub" id="progSub">AI model initialize ho raha hai...</div>
+    </div>
+
+    <div class="img-grid" id="procGrid"></div>
+  </section>
+
+  <!-- STEP 4 ── Download ───────────────────────────────────────────────────── -->
+  <section class="sec" id="s4">
+    <div class="sec-hdr">
+      <div class="sec-eyebrow">Step 4 of 4</div>
+      <h1 class="sec-title">Sab tayyar! ✓</h1>
+    </div>
+
+    <div class="dl-hero">
+      <div class="dl-em">🎉</div>
+      <div class="dl-title" id="dlTitle">Images ready hain</div>
+      <div class="dl-sub">Before/After neeche dekh sakte ho. ZIP mein download karo.</div>
+      <button class="btn btn-primary btn-lg" id="dlBtn" onclick="doDownload()">
+        ⬇️ Download All as ZIP
+      </button>
+    </div>
+
+    <div class="img-grid" id="resGrid"></div>
+
+    <div class="ctrl" style="margin-top:28px">
+      <button class="btn btn-ghost" onclick="doMore()">Process More Images</button>
+      <button class="btn btn-ghost" onclick="goStep(1)">Start Over</button>
+    </div>
+  </section>
+
+</main>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- ── EXTERNAL LIBS ───────────────────────────────────────────────────────── -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+<!-- ── APP LOGIC ──────────────────────────────────────────────────────────── -->
+<script type="module">
+import { removeBackground } from 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/background-removal.js';
+
+/* ── STATE ──────────────────────────────────────────────────────────────── */
+const S = {
+  bgImg: null,    // HTMLImageElement
+  bgFile: null,   // original File
+  srcFiles: [],   // [{file, name}]
+  results: [],    // [{name, blob, origBlob}]
+};
+
+/* ── IMGLY CONFIG ────────────────────────────────────────────────────────── */
+const IMGLY = {
+  publicPath: 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/',
+  debug: false,
+  model: 'medium',
+  output: { format: 'image/png', quality: 1 },
+};
+
+/* ── STEP NAVIGATION ─────────────────────────────────────────────────────── */
+window.goStep = function(n) {
+  document.querySelectorAll('.sec').forEach(el => el.classList.remove('active'));
+  document.getElementById('s' + n)?.classList.add('active');
+  // Update nav
+  document.querySelectorAll('.snav[data-s]').forEach(el => {
+    const s = +el.dataset.s;
+    el.classList.toggle('active', s === n);
+    el.classList.toggle('done', s < n);
+    const num = el.querySelector('.snav-num');
+    num.textContent = s < n ? '✓' : s;
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+/* ── BG UPLOAD ───────────────────────────────────────────────────────────── */
+const bgInput = document.getElementById('bgInput');
+const bgZone  = document.getElementById('bgZone');
+
+bgInput.addEventListener('change', e => loadBg(e.target.files[0]));
+bgZone.addEventListener('dragover',  e => { e.preventDefault(); bgZone.classList.add('drag'); });
+bgZone.addEventListener('dragleave', () => bgZone.classList.remove('drag'));
+bgZone.addEventListener('drop', e => {
+  e.preventDefault(); bgZone.classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) loadBg(f);
+});
+
+function loadBg(file) {
+  if (!file) return;
+  S.bgFile = file;
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    S.bgImg = img;
+    document.getElementById('bgPreviewImg').src = url;
+    document.getElementById('bgName').textContent = file.name;
+    document.getElementById('bgMeta').textContent = `${img.naturalWidth} × ${img.naturalHeight}px · ${fmtSize(file.size)}`;
+    document.getElementById('bgPreview').classList.add('show');
+    bgZone.style.display = 'none';
+    document.getElementById('toBg2').disabled = false;
+    toast('Background set!', 'ok');
+  };
+  img.onerror = () => toast('Image load nahi hui. Koi doosri try karo.', 'err');
+  img.src = url;
+}
+
+window.changeBg = function() {
+  document.getElementById('bgPreview').classList.remove('show');
+  bgZone.style.display = '';
+  bgInput.value = '';
+  S.bgImg = null;
+  document.getElementById('toBg2').disabled = true;
+};
+
+/* ── IMAGES UPLOAD ───────────────────────────────────────────────────────── */
+const imgInput = document.getElementById('imgInput');
+const imgZone  = document.getElementById('imgZone');
+
+imgInput.addEventListener('change', e => loadImgs(e.target.files));
+imgZone.addEventListener('dragover',  e => { e.preventDefault(); imgZone.classList.add('drag'); });
+imgZone.addEventListener('dragleave', () => imgZone.classList.remove('drag'));
+imgZone.addEventListener('drop', e => {
+  e.preventDefault(); imgZone.classList.remove('drag');
+  loadImgs(e.dataTransfer.files);
+});
+
+function loadImgs(files) {
+  if (!files || !files.length) return;
+  const arr = Array.from(files).filter(f => f.type.startsWith('image/')).slice(0, 10);
+  if (files.length > 10) toast('Max 10 images — pehle 10 li hain.', 'info');
+  S.srcFiles = arr.map(f => ({ file: f, name: f.name }));
+  renderImgGrid();
+  const n = arr.length;
+  const badge = document.getElementById('cntBadge');
+  badge.textContent = n + ' selected';
+  badge.className = 'cnt-badge' + (n > 0 ? ' filled' : '');
+  document.getElementById('procBtn').disabled = n === 0;
+}
+
+function renderImgGrid() {
+  const grid = document.getElementById('imgGrid');
+  grid.innerHTML = '';
+  S.srcFiles.forEach(({ file, name }) => {
+    const url = URL.createObjectURL(file);
+    const c = document.createElement('div');
+    c.className = 'img-card';
+    c.innerHTML = `<img src="${url}" loading="lazy"/><div class="img-card-name">${name}</div><div class="img-status pending">○</div>`;
+    grid.appendChild(c);
+  });
+}
+
+/* ── PROCESSING ──────────────────────────────────────────────────────────── */
+window.startProcess = async function() {
+  if (!S.srcFiles.length || !S.bgImg) return;
+  goStep(3);
+  S.results = [];
+
+  // Build proc grid
+  const pg = document.getElementById('procGrid');
+  pg.innerHTML = '';
+  const cards = S.srcFiles.map(({ file, name }, i) => {
+    const url = URL.createObjectURL(file);
+    const c = document.createElement('div');
+    c.className = 'img-card'; c.id = 'pc' + i;
+    c.innerHTML = `<img src="${url}" id="pci${i}"/><div class="img-card-name">${name}</div><div class="img-status pending" id="ps${i}">○</div>`;
+    pg.appendChild(c);
+    return c;
+  });
+
+  const total = S.srcFiles.length;
+  let done = 0, errs = 0;
+  setProgress(0, total, 'AI model load ho raha hai...');
+
+  // Sequential processing (memory safe)
+  for (let i = 0; i < total; i++) {
+    const { file, name } = S.srcFiles[i];
+    const stat = document.getElementById('ps' + i);
+    const img  = document.getElementById('pci' + i);
+
+    stat.className = 'img-status proc';
+    stat.innerHTML = '<span class="spin" style="width:10px;height:10px;border-width:1.5px"></span>';
+    setProgress(i / total * 100, total, `Processing: ${name} (${i+1}/${total})`);
+
+    try {
+      // ── Background removal (AI)
+      const noBgBlob = await removeBackground(file, IMGLY);
+
+      // ── Realism engine (shadow + color + blending)
+      const finalBlob = await realismEngine(noBgBlob, S.bgImg);
+
+      S.results.push({ name: stripExt(name) + '_bg_changed.png', blob: finalBlob, origBlob: file });
+
+      stat.className = 'img-status done'; stat.textContent = '✓';
+      img.src = URL.createObjectURL(finalBlob); // show result in grid
+      done++;
+    } catch (err) {
+      console.error('Process error:', name, err);
+      stat.className = 'img-status err'; stat.textContent = '✗';
+      errs++;
+    }
+
+    setProgress((i+1) / total * 100, total,
+      `Done: ${done} ✓` + (errs ? `  |  Error: ${errs} ✗` : ''));
+  }
+
+  // Mark complete
+  const pill = document.getElementById('procPill');
+  pill.className = 'pill done'; pill.textContent = '✓ Complete';
+
+  setTimeout(() => {
+    goStep(4);
+    document.getElementById('dlTitle').textContent = `${done} image${done !== 1 ? 's' : ''} ready hain!`;
+    renderResults();
+    if (errs) toast(`${errs} image${errs > 1 ? 's' : ''} mein error aayi.`, 'err');
+  }, 700);
+};
+
+function setProgress(pct, total, text) {
+  document.getElementById('progFill').style.width = Math.min(pct, 100) + '%';
+  document.getElementById('progCount').textContent = Math.round(pct / 100 * total) + ' / ' + total;
+  document.getElementById('progSub').textContent = text;
+}
+
+/* ── REALISM ENGINE ──────────────────────────────────────────────────────── */
+/*
+  Pipeline:
+  1. Draw background (cover crop)
+  2. Drop shadow (blurred dark silhouette, offset)
+  3. Draw subject
+  4. Color bleed (BG color bleeds slightly onto edges)
+  5. Ambient tone grade (subtle BG tint on subject)
+*/
+async function realismEngine(subjectBlob, bgEl) {
+  const sub = await blobToImg(subjectBlob);
+  const W = sub.naturalWidth, H = sub.naturalHeight;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // ── 1. BACKGROUND (cover crop to match image size) ────────────────────
+  const bW = bgEl.naturalWidth, bH = bgEl.naturalHeight;
+  const bAsp = bW / bH, cAsp = W / H;
+  let sx = 0, sy = 0, sw = bW, sh = bH;
+  if (bAsp > cAsp) { sw = bH * cAsp; sx = (bW - sw) / 2; }
+  else              { sh = bW / cAsp; sy = (bH - sh) / 2; }
+  ctx.drawImage(bgEl, sx, sy, sw, sh, 0, 0, W, H);
+
+  // ── 2. DOMINANT COLOR (sample BG edges for realistic shadow/bleed) ────
+  const rgb = getDominant(bgEl);
+
+  // ── 3. SHADOW (dark silhouette, blurred + offset) ─────────────────────
+  const shCv = document.createElement('canvas');
+  shCv.width = W; shCv.height = H;
+  const shCtx = shCv.getContext('2d');
+  shCtx.drawImage(sub, 0, 0);
+  const shDat = shCtx.getImageData(0, 0, W, H);
+  const d = shDat.data;
+  // Colorize to very dark version of BG (shadow color)
+  const sr = Math.round(rgb.r * 0.08), sg = Math.round(rgb.g * 0.08), sb = Math.round(rgb.b * 0.08);
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i+3] > 15) { d[i] = sr; d[i+1] = sg; d[i+2] = sb; }
+    // alpha kept for soft edges
+  }
+  shCtx.putImageData(shDat, 0, 0);
+
+  const offX  = Math.round(W * 0.009);
+  const offY  = Math.round(H * 0.016);
+  const blurR = Math.round(Math.min(W, H) * 0.022);
+
+  ctx.save();
+  ctx.filter = `blur(${blurR}px)`;
+  ctx.globalAlpha = 0.52;
+  ctx.drawImage(shCv, offX, offY);
+  ctx.filter = 'none';
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  // ── 4. DRAW SUBJECT ────────────────────────────────────────────────────
+  ctx.drawImage(sub, 0, 0);
+
+  // ── 5. COLOR BLEED (BG color softly bleeds onto subject edges) ─────────
+  const bleedCv = document.createElement('canvas');
+  bleedCv.width = W; bleedCv.height = H;
+  const bleedCtx = bleedCv.getContext('2d');
+  bleedCtx.drawImage(sub, 0, 0);                           // draw subject (transparent bg)
+  bleedCtx.globalCompositeOperation = 'source-atop';       // only paint where subject is
+  bleedCtx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.20)`;
+  bleedCtx.fillRect(0, 0, W, H);
+
+  const edgeBlur = Math.round(Math.min(W, H) * 0.005);
+  ctx.save();
+  ctx.filter = `blur(${Math.max(edgeBlur, 2)}px)`;
+  ctx.globalAlpha = 0.60;
+  ctx.drawImage(bleedCv, 0, 0);
+  ctx.filter = 'none';
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  // ── 6. AMBIENT TONE GRADE (very subtle BG tint over whole subject) ─────
+  ctx.save();
+  ctx.globalCompositeOperation = 'soft-light';
+  ctx.globalAlpha = 0.08;
+  ctx.fillStyle = `rgb(${rgb.r},${rgb.g},${rgb.b})`;
+  ctx.fillRect(0, 0, W, H);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  // ── 7. EXPORT full quality PNG ─────────────────────────────────────────
+  return new Promise(res => canvas.toBlob(b => res(b), 'image/png', 1.0));
+}
+
+function getDominant(imgEl) {
+  const c = document.createElement('canvas'); c.width = 80; c.height = 80;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(imgEl, 0, 0, 80, 80);
+  const dat = ctx.getImageData(0, 0, 80, 80).data;
+  let r = 0, g = 0, b = 0, n = 0;
+  for (let i = 0; i < dat.length; i += 4) {
+    const px = (i/4) % 80, py = Math.floor(i/4/80);
+    if (px < 14 || px > 66 || py < 14 || py > 66) { // edge pixels = bg
+      r += dat[i]; g += dat[i+1]; b += dat[i+2]; n++;
+    }
+  }
+  return { r: Math.round(r/n), g: Math.round(g/n), b: Math.round(b/n) };
+}
+
+/* ── DOWNLOAD ZIP ────────────────────────────────────────────────────────── */
+window.doDownload = async function() {
+  const btn = document.getElementById('dlBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> ZIP ban raha hai...';
+
+  try {
+    const zip = new JSZip();
+    const folder = zip.folder('bg_changed');
+    S.results.forEach(r => folder.file(r.name, r.blob));
+
+    const zipBlob = await zip.generateAsync(
+      { type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 2 } },
+      meta => { btn.innerHTML = `<span class="spin"></span> ${Math.round(meta.percent)}%`; }
+    );
+
+    saveAs(zipBlob, `BG_Changer_${Date.now()}.zip`);
+    toast(`${S.results.length} images download ho gayi! ✓`, 'ok');
+  } catch (e) {
+    toast('Download fail hua. Dobara try karo.', 'err');
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '⬇️ Download All as ZIP';
+  }
+};
+
+/* ── RESULTS GRID ────────────────────────────────────────────────────────── */
+function renderResults() {
+  const g = document.getElementById('resGrid'); g.innerHTML = '';
+  S.results.forEach(r => {
+    const origUrl = URL.createObjectURL(r.origBlob);
+    const newUrl  = URL.createObjectURL(r.blob);
+    const c = document.createElement('div');
+    c.className = 'res-card';
+    c.innerHTML = `
+      <div class="res-imgs">
+        <img src="${origUrl}" title="Original"/>
+        <img src="${newUrl}" title="Result"/>
+      </div>
+      <div class="res-footer">
+        <div class="res-name">${r.name}</div>
+        <span class="pill done" style="padding:2px 7px;font-size:10px">✓ Done</span>
+      </div>`;
+    g.appendChild(c);
+  });
+}
+
+/* ── PROCESS MORE ────────────────────────────────────────────────────────── */
+window.doMore = function() {
+  S.srcFiles = []; S.results = [];
+  document.getElementById('imgGrid').innerHTML = '';
+  document.getElementById('imgInput').value = '';
+  document.getElementById('cntBadge').textContent = '0 selected';
+  document.getElementById('cntBadge').className = 'cnt-badge';
+  document.getElementById('procBtn').disabled = true;
+  goStep(2);
+};
+
+/* ── UTILITIES ───────────────────────────────────────────────────────────── */
+function blobToImg(blob) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => res(img);
+    img.onerror = rej;
+    img.src = URL.createObjectURL(blob);
+  });
+}
+function stripExt(name) { return name.replace(/\.[^.]+$/, ''); }
+function fmtSize(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(1) + ' MB';
+}
+function toast(msg, type = 'info') {
+  const w = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${{ok:'✓',err:'✗',info:'ℹ'}[type]||'ℹ'}</span> ${msg}`;
+  w.appendChild(el);
+  setTimeout(() => el.remove(), 3800);
+}
+
+/* ── PWA REGISTRATION ────────────────────────────────────────────────────── */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .catch(e => console.warn('SW:', e));
+  });
+}
+
+// Expose functions to global (used in onclick)
+window.toast = toast;
+</script>
+</body>
+</html>
