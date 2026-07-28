@@ -782,7 +782,10 @@ button{font-family:inherit;cursor:pointer;border:none;outline:none}
 
 <script type="module">
 /* ── FIXED: correct default export from latest version ─────── */
-import imglyRemoveBackground from 'https://esm.sh/@imgly/background-removal@1.7.0';
+/* ── ROBUST IMPORT: handles default OR named export from any CDN ── */
+import * as imglyMod from 'https://esm.sh/@imgly/background-removal@1.7.0';
+const removeBackground = imglyMod.default || imglyMod.removeBackground || imglyMod.imglyRemoveBackground;
+if (!removeBackground) throw new Error('AI library load failed. Refresh the page.');
 
 /* ── APP STATE ─────────────────────────────────────────────── */
 const A = {
@@ -954,11 +957,14 @@ window.startProc = async () => {
 
   const CFG={
     progress:(key,cur,tot)=>{
-      if(tot>0&&key&&String(key).includes('fetch')&&done===0)
-        setP(Math.round(cur/tot*25),total,`Model download: ${Math.round(cur/tot*100)}%...`);
+      if(tot>0&&key&&done===0){
+        const pct=Math.round(cur/tot*100);
+        if(pct>0) setP(Math.round(cur/tot*25),total,`AI model download: ${pct}%... (pehli baar, ek baar hi hoga)`);
+      }
     },
     model:'isnet_fp16',
     output:{format:'image/png',quality:1,type:'foreground'},
+    /* No publicPath needed — IMG.LY serves model files automatically */
   };
 
   for(let i=0;i<total;i++){
@@ -968,7 +974,7 @@ window.startProc = async () => {
     stat.innerHTML='<span class="spin" style="width:9px;height:9px;border-width:1.5px"></span>';
     setP(25+i/total*65,total,`Processing: ${name} (${i+1}/${total})`);
     try{
-      const noBg = await imglyRemoveBackground(file, CFG);
+      const noBg = await removeBackground(file, CFG);
       const final = await realismEngine(noBg, A.bgImg);
       A.results.push({name:noExt(name)+'_bg_changed.png',blob:final,orig:file});
       stat.className='slot-stat ok'; stat.textContent='✓';
@@ -1163,6 +1169,16 @@ function toast(msg,type='info'){
   setTimeout(()=>{el.style.animation='tOut .28s ease forwards';setTimeout(()=>el.remove(),300);},3800);
 }
 window.toast=toast;
+/* ── GLOBAL DRAG PREVENTION: stops files opening in new browser tab ── */
+window.addEventListener('dragover', e => e.preventDefault(), false);
+window.addEventListener('drop', e => {
+  if (!e.target.closest('.ulbl, .slot, .sgrid, #slotsGrid, #batchArea')) {
+    e.preventDefault();
+    e.stopPropagation();
+    toast('Upload zone ke andar drop karo!','info');
+  }
+}, false);
+
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 }
