@@ -962,7 +962,7 @@ window.startProc = async () => {
         if(pct>0) setP(Math.round(cur/tot*25),total,`AI model download: ${pct}%... (pehli baar, ek baar hi hoga)`);
       }
     },
-    model:'isnet_fp16',
+    model:'medium', /* better edges for complex food/props */
     output:{format:'image/png',quality:1,type:'foreground'},
     /* No publicPath needed — IMG.LY serves model files automatically */
   };
@@ -1005,62 +1005,55 @@ function setP(pct,total,text){
   document.getElementById('progS').textContent=text;
 }
 
-/* ── REALISM ENGINE ─────────────────────────────────────────── */
+/* ══ REALISM ENGINE v2 — FOOD PHOTOGRAPHY SAFE ══════════════════
+   RULE: Subject ke colors BILKUL touch nahi. Sirf:
+   1. Background lagao  2. Natural shadow  3. Edge soften
+   COLOR BLEED / TONE GRADE = food photos DESTROY karta tha → REMOVED
+════════════════════════════════════════════════════════════════ */
 async function realismEngine(subBlob, bgEl){
-  const sub=await toImg(subBlob);
-  const W=sub.naturalWidth, H=sub.naturalHeight;
-  const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
-  const ctx=cv.getContext('2d');
+  const sub = await toImg(subBlob);
+  const W = sub.naturalWidth, H = sub.naturalHeight;
+  const cv = document.createElement('canvas');
+  cv.width=W; cv.height=H;
+  const ctx = cv.getContext('2d');
 
-  /* 1. BG cover crop */
-  const bw=bgEl.naturalWidth,bh=bgEl.naturalHeight;
-  const ba=bw/bh,ca=W/H;
-  let sx=0,sy=0,sw=bw,sh=bh;
-  if(ba>ca){sw=bh*ca;sx=(bw-sw)/2;} else{sh=bw/ca;sy=(bh-sh)/2;}
+  /* 1. Background — cover crop */
+  const bW=bgEl.naturalWidth, bH=bgEl.naturalHeight, bA=bW/bH, cA=W/H;
+  let sx=0,sy=0,sw=bW,sh=bH;
+  if(bA>cA){sw=bH*cA;sx=(bW-sw)/2;}else{sh=bW/cA;sy=(bH-sh)/2;}
   ctx.drawImage(bgEl,sx,sy,sw,sh,0,0,W,H);
 
-  /* 2. Dominant BG color */
-  const rgb=dominant(bgEl);
+  /* 2. Ground Shadow — ONLY downward, very subtle */
+  const rgb = getBgColor(bgEl);
+  const shCv=document.createElement('canvas'); shCv.width=W; shCv.height=H;
+  const shCtx=shCv.getContext('2d'); shCtx.drawImage(sub,0,0);
+  const shD=shCtx.getImageData(0,0,W,H); const sd=shD.data;
+  const sR=rgb.r*.06|0, sG=rgb.g*.06|0, sB=rgb.b*.06|0;
+  for(let i=0;i<sd.length;i+=4) if(sd[i+3]>20){sd[i]=sR;sd[i+1]=sG;sd[i+2]=sB;}
+  shCtx.putImageData(shD,0,0);
+  const offX=W*.005|0, offY=H*.018|0, blr=Math.min(W,H)*.028|0;
+  ctx.save(); ctx.filter=`blur(${blr}px)`; ctx.globalAlpha=.4;
+  ctx.drawImage(shCv,offX,offY); ctx.filter='none'; ctx.globalAlpha=1; ctx.restore();
 
-  /* 3. Drop shadow */
-  const sc=document.createElement('canvas'); sc.width=W; sc.height=H;
-  const sx2=sc.getContext('2d'); sx2.drawImage(sub,0,0);
-  const sd=sx2.getImageData(0,0,W,H); const dat=sd.data;
-  const [r,g,b]=[rgb.r*.07|0, rgb.g*.07|0, rgb.b*.07|0];
-  for(let i=0;i<dat.length;i+=4) if(dat[i+3]>15){dat[i]=r;dat[i+1]=g;dat[i+2]=b;}
-  sx2.putImageData(sd,0,0);
-  const ox=W*.009|0, oy=H*.016|0, bl=Math.min(W,H)*.022|0;
-  ctx.save(); ctx.filter=`blur(${bl}px)`; ctx.globalAlpha=.5;
-  ctx.drawImage(sc,ox,oy); ctx.filter='none'; ctx.globalAlpha=1; ctx.restore();
+  /* 3. Edge feather — soft halo pass removes scissors-cut look */
+  ctx.save(); ctx.filter='blur(0.8px)'; ctx.globalAlpha=.32;
+  ctx.drawImage(sub,0,0); ctx.filter='none'; ctx.globalAlpha=1; ctx.restore();
 
-  /* 4. Subject */
+  /* 4. Subject — FULL ORIGINAL COLORS, zero modification */
   ctx.drawImage(sub,0,0);
 
-  /* 5. Color bleed */
-  const bc=document.createElement('canvas'); bc.width=W; bc.height=H;
-  const bx=bc.getContext('2d'); bx.drawImage(sub,0,0);
-  bx.globalCompositeOperation='source-atop';
-  bx.fillStyle=`rgba(${rgb.r},${rgb.g},${rgb.b},.18)`; bx.fillRect(0,0,W,H);
-  const eb=Math.max((Math.min(W,H)*.005)|0,2);
-  ctx.save(); ctx.filter=`blur(${eb}px)`; ctx.globalAlpha=.55;
-  ctx.drawImage(bc,0,0); ctx.filter='none'; ctx.globalAlpha=1; ctx.restore();
-
-  /* 6. Tone grade */
-  ctx.save(); ctx.globalCompositeOperation='soft-light'; ctx.globalAlpha=.07;
-  ctx.fillStyle=`rgb(${rgb.r},${rgb.g},${rgb.b})`; ctx.fillRect(0,0,W,H);
-  ctx.globalCompositeOperation='source-over'; ctx.globalAlpha=1; ctx.restore();
-
+  /* NO color bleed. NO tone grade. Food colors = 100% preserved. */
   return new Promise(res=>cv.toBlob(b=>res(b),'image/png',1.0));
 }
 
-function dominant(el){
-  const c=document.createElement('canvas'); c.width=80; c.height=80;
-  const ctx=c.getContext('2d'); ctx.drawImage(el,0,0,80,80);
-  const d=ctx.getImageData(0,0,80,80).data;
+function getBgColor(el){
+  const c=document.createElement('canvas'); c.width=60; c.height=60;
+  const ctx=c.getContext('2d'); ctx.drawImage(el,0,0,60,60);
+  const d=ctx.getImageData(0,0,60,60).data;
   let r=0,g=0,b=0,n=0;
   for(let i=0;i<d.length;i+=4){
-    const px=(i/4)%80,py=(i/4/80)|0;
-    if(px<14||px>66||py<14||py>66){r+=d[i];g+=d[i+1];b+=d[i+2];n++;}
+    const px=(i/4)%60,py=(i/4/60)|0;
+    if(px<10||px>50||py<10||py>50){r+=d[i];g+=d[i+1];b+=d[i+2];n++;}
   }
   return{r:r/n|0,g:g/n|0,b:b/n|0};
 }
