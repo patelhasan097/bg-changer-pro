@@ -1,10 +1,8 @@
-/* BG Changer Pro — Service Worker v1.0
-   Strategy: App Shell → Cache First | CDN/Model → Cache First | Rest → Network First */
+/* BG Changer Pro — Service Worker v1.0 */
 
 const VERSION   = 'bg-changer-v1.0';
 const APP_SHELL = ['./', './index.html', './manifest.json', './icon.svg'];
 
-/* INSTALL */
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(VERSION)
@@ -13,7 +11,6 @@ self.addEventListener('install', e => {
   );
 });
 
-/* ACTIVATE — delete old caches */
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
@@ -24,19 +21,16 @@ self.addEventListener('activate', e => {
   );
 });
 
-/* FETCH */
 self.addEventListener('fetch', e => {
   const url = e.request.url;
 
-  /* App shell → cache first */
   if (url.endsWith('/') || url.includes('index.html') ||
       url.includes('manifest.json') || url.includes('icon.svg')) {
     e.respondWith(cacheFirst(e.request));
     return;
   }
 
-  /* CDN (AI model, JSZip, fonts) → cache first + bg update */
-  if (url.includes('cdn.jsdelivr.net')     ||
+  if (url.includes('cdn.jsdelivr.net') ||
       url.includes('cdnjs.cloudflare.com') ||
       url.includes('fonts.googleapis.com') ||
       url.includes('fonts.gstatic.com')) {
@@ -44,11 +38,9 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  /* Everything else → network first */
   e.respondWith(networkFirst(e.request));
 });
 
-/* ── Strategies ────────────────────────────────────────────────────────── */
 async function cacheFirst(req) {
   const hit = await caches.match(req);
   return hit || fetchAndStore(req);
@@ -64,19 +56,20 @@ async function cacheFirstBgUpdate(req) {
 async function networkFirst(req) {
   try {
     const resp = await fetch(req);
-    if (resp?.ok) {
+    if (resp && resp.ok) {
       const c = await caches.open(VERSION);
       c.put(req, resp.clone()).catch(() => {});
     }
     return resp;
   } catch {
-    return caches.match(req) || new Response('Offline', { status: 503 });
+    const cached = await caches.match(req);
+    return cached || new Response('Offline', { status: 503 });
   }
 }
 
 async function fetchAndStore(req) {
   const resp = await fetch(req);
-  if (resp?.ok && resp.type !== 'opaque') {
+  if (resp && resp.ok && resp.type !== 'opaque') {
     const c = await caches.open(VERSION);
     c.put(req, resp.clone()).catch(() => {});
   }
