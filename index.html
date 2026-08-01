@@ -1,895 +1,196 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>BG Changer Pro — AI Background Replacement</title>
-<meta name="theme-color" content="#050508"/>
-<link rel="manifest" href="manifest.json"/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@700;800;900&display=swap" rel="stylesheet"/>
-<style>
-:root{
-  --deep:#050508;--surf:#0E0E18;--surf-el:#13131F;--surf-hi:#181826;
-  --glass:rgba(255,255,255,.03);--glass-el:rgba(255,255,255,.055);
-  --bdr:rgba(255,255,255,.07);--bdr-s:rgba(255,255,255,.12);--bdr-hi:rgba(255,255,255,.2);
-  --gold:#FFB930;--gold-lt:#FFCC60;--gold-d:#D4920A;
-  --g-gold:linear-gradient(135deg,#FFD060,#FF8C20);
-  --gold-glow:rgba(255,185,48,.22);--gold-border:rgba(255,185,48,.3);
-  --blue:#5B8FFF;--blue-lt:#7AAEFF;
-  --g-blue:linear-gradient(135deg,#5B8FFF,#9B6DFF);
-  --blue-glow:rgba(91,143,255,.15);--blue-border:rgba(91,143,255,.28);
-  --purple:#A066FF;--purple-glow:rgba(160,102,255,.15);
-  --emerald:#00D68F;--emerald-glow:rgba(0,214,143,.15);--emerald-border:rgba(0,214,143,.28);
-  --red:#FF5555;--red-glow:rgba(255,85,85,.12);
-  --txt:#F0EBE0;--txt-m:#8A8480;--txt-s:#484440;
-  --g-rainbow:linear-gradient(90deg,#FF8C20,#FFB930,#00D68F,#5B8FFF,#A066FF);
-  --g-title:linear-gradient(135deg,#FFD060 0%,#FF9030 60%,#FF6090 100%);
-  --r:14px;--r-lg:20px;--r-sm:8px;
-  --sh:0 4px 24px rgba(0,0,0,.5);--sh-lg:0 12px 48px rgba(0,0,0,.6);
-  --sh-gold:0 6px 28px rgba(255,185,48,.35);--tr:.2s ease;
-}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;height:100%}
-body{background:var(--deep);color:var(--txt);font-family:'Inter',system-ui,sans-serif;
-  font-size:14.5px;line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100%;overflow-x:hidden}
-::selection{background:rgba(255,185,48,.25)}
-::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--deep)}
-::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
-img{display:block;max-width:100%}button{font-family:inherit;cursor:pointer;border:none;outline:none}
-textarea,input{font-family:inherit}
-
-/* ── ANIMATED MESH ── */
-.mesh{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-.orb{position:absolute;border-radius:50%;filter:blur(100px);animation:drift 12s ease-in-out infinite}
-.o1{width:550px;height:550px;background:radial-gradient(circle,rgba(160,102,255,.09),transparent 70%);top:-200px;left:-150px}
-.o2{width:500px;height:500px;background:radial-gradient(circle,rgba(91,143,255,.08),transparent 70%);bottom:-150px;right:-150px;animation-delay:-5s}
-.o3{width:450px;height:450px;background:radial-gradient(circle,rgba(255,140,32,.06),transparent 70%);top:40%;left:40%;transform:translate(-50%,-50%);animation-delay:-9s}
-@keyframes drift{0%,100%{transform:translate(0,0)}33%{transform:translate(30px,-25px)}66%{transform:translate(-20px,30px)}}
-.grid-bg{position:fixed;inset:0;z-index:0;pointer-events:none;
-  background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
-  background-size:64px 64px;mask-image:radial-gradient(ellipse at 50% 50%,black 20%,transparent 75%)}
-.page{position:relative;z-index:1}
-
-/* ── HEADER ── */
-.hdr{position:sticky;top:0;z-index:200;height:58px;padding:0 24px;
-  display:flex;align-items:center;justify-content:space-between;gap:16px;
-  background:rgba(5,5,8,.85);backdrop-filter:blur(24px) saturate(180%);border-bottom:1px solid var(--bdr)}
-.logo{display:flex;align-items:center;gap:10px;flex-shrink:0;
-  font-family:'Syne',sans-serif;font-size:17px;font-weight:800;
-  background:var(--g-gold);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.logo-mark{width:32px;height:32px;border-radius:9px;background:var(--g-gold);
-  display:flex;align-items:center;justify-content:center;font-size:16px;
-  box-shadow:0 4px 14px rgba(255,185,48,.4);flex-shrink:0}
-.snav{display:flex;align-items:center;gap:2px;overflow-x:auto;scrollbar-width:none}
-.snav::-webkit-scrollbar{display:none}
-.sn{display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;
-  font-size:12px;font-weight:500;color:var(--txt-s);white-space:nowrap;transition:var(--tr)}
-.sn.active{background:rgba(255,185,48,.12);color:var(--gold);border:1px solid var(--gold-border);box-shadow:0 0 14px rgba(255,185,48,.12)}
-.sn.done{color:var(--emerald)}
-.sn-n{width:17px;height:17px;border-radius:50%;border:1.5px solid currentColor;
-  display:flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:800;flex-shrink:0}
-.sn.done .sn-n{background:var(--emerald);border-color:var(--emerald);color:#030a06}
-.sn-arr{font-size:10px;color:var(--txt-s);opacity:.4;margin:0 1px}
-.hdr-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
-.badge-free{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;
-  background:rgba(0,214,143,.08);border:1px solid var(--emerald-border);color:var(--emerald)}
-.settings-btn{width:32px;height:32px;border-radius:8px;background:var(--glass);
-  border:1px solid var(--bdr-s);color:var(--txt-m);font-size:14px;
-  display:flex;align-items:center;justify-content:center;transition:var(--tr)}
-.settings-btn:hover{background:var(--glass-el,rgba(255,255,255,.06));color:var(--txt);border-color:var(--bdr-hi)}
-
-/* ── MAIN ── */
-.main{max-width:860px;margin:0 auto;padding:36px 20px 100px}
-.sec{display:none}.sec.on{display:block;animation:fadeUp .3s ease}
-@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-.sh{margin-bottom:28px}
-.sh-eye{font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;
-  background:var(--g-gold);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  margin-bottom:8px;display:inline-block}
-.sh-title{font-family:'Syne',sans-serif;font-size:28px;font-weight:900;letter-spacing:-.5px;line-height:1.15}
-.sh-title span{background:var(--g-title);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.sh-sub{font-size:13px;color:var(--txt-m);margin-top:6px;line-height:1.6;max-width:560px}
-
-/* ── SETTINGS PANEL (HF Token) ── */
-.settings-overlay{position:fixed;inset:0;z-index:500;background:rgba(5,5,8,.8);backdrop-filter:blur(12px);display:none;align-items:center;justify-content:center;padding:20px}
-.settings-overlay.on{display:flex}
-.settings-box{background:var(--surf-el,#13131F);border:1px solid var(--bdr-s);border-radius:var(--r-lg);padding:28px;width:100%;max-width:500px;box-shadow:var(--sh-lg)}
-.settings-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
-.settings-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:800}
-.settings-close{width:28px;height:28px;border-radius:6px;background:var(--glass);border:1px solid var(--bdr-s);
-  color:var(--txt-m);display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer}
-.field-label{font-size:12.5px;font-weight:600;color:var(--txt-m);margin-bottom:7px}
-.field-input{width:100%;background:var(--glass);border:1px solid var(--bdr-s);border-radius:var(--r);
-  padding:11px 14px;font-size:13.5px;color:var(--txt);outline:none;transition:var(--tr)}
-.field-input:focus{border-color:var(--gold-border);box-shadow:0 0 0 3px rgba(255,185,48,.08)}
-.field-input::placeholder{color:var(--txt-s)}
-.field-hint{font-size:11.5px;color:var(--txt-s);margin-top:6px;line-height:1.55}
-.field-hint a{color:var(--blue-lt);text-decoration:none}
-.field-hint a:hover{text-decoration:underline}
-.token-status{display:flex;align-items:center;gap:7px;margin-top:10px;font-size:12.5px}
-
-/* ── UPLOAD ZONE ── */
-.ulbl{display:block;position:relative;background:var(--glass);border:1.5px dashed rgba(255,255,255,.12);
-  border-radius:var(--r-lg);padding:44px 28px;text-align:center;cursor:pointer;overflow:hidden;transition:all var(--tr)}
-.ulbl::before{content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse at 50% 0,rgba(255,185,48,.08) 0%,transparent 65%);
-  opacity:0;transition:opacity var(--tr);pointer-events:none}
-.ulbl:hover,.ulbl.drag{border-color:var(--gold-border);background:rgba(255,185,48,.03);box-shadow:0 0 0 4px rgba(255,185,48,.06)}
-.ulbl:hover::before,.ulbl.drag::before{opacity:1}
-.ulbl input[type=file]{width:1px;height:1px;position:absolute;opacity:0;top:0;left:0;pointer-events:none}
-.uz-ring{width:58px;height:58px;border-radius:16px;margin:0 auto 16px;
-  background:var(--glass-el,rgba(255,255,255,.05));border:1px solid var(--bdr-s);
-  display:flex;align-items:center;justify-content:center;font-size:24px;transition:var(--tr)}
-.ulbl:hover .uz-ring{background:rgba(255,185,48,.1);border-color:var(--gold-border);box-shadow:0 0 20px rgba(255,185,48,.18)}
-.uz-h{font-size:16px;font-weight:600;color:var(--txt);margin-bottom:5px}
-.uz-p{font-size:12.5px;color:var(--txt-m)}
-.uz-chip{display:inline-flex;align-items:center;gap:6px;margin-top:13px;padding:5px 14px;
-  border-radius:20px;background:rgba(255,185,48,.08);border:1px solid rgba(255,185,48,.18);
-  color:rgba(255,185,48,.85);font-size:11.5px;font-weight:500}
-
-/* ── IMAGE SLOTS ── */
-.slots-hdr{display:flex;align-items:center;justify-content:space-between;margin-top:18px;margin-bottom:12px;flex-wrap:wrap;gap:8px}
-.slots-info{display:flex;align-items:center;gap:10px}
-.slots-title{font-size:13px;font-weight:600;color:var(--txt)}
-.sdots{display:flex;gap:4px}
-.sdot{width:7px;height:7px;border-radius:50%;background:var(--bdr-s);transition:var(--tr)}
-.sdot.on{background:var(--gold);box-shadow:0 0 6px rgba(255,185,48,.55)}
-.scnt{padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:600;
-  background:var(--glass);border:1px solid var(--bdr-s);color:var(--txt-m)}
-.scnt.has{background:rgba(255,185,48,.1);border-color:var(--gold-border);color:var(--gold)}
-.add-lbl{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--r-sm);
-  font-size:12.5px;font-weight:500;color:var(--gold);cursor:pointer;transition:var(--tr);
-  background:rgba(255,185,48,.08);border:1px solid var(--gold-border)}
-.add-lbl:hover{background:rgba(255,185,48,.15);box-shadow:0 0 12px rgba(255,185,48,.15)}
-.sgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
-.slot{aspect-ratio:1;border-radius:var(--r);overflow:hidden;position:relative;
-  background:var(--glass);border:1.5px dashed var(--bdr-s);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
-  cursor:pointer;transition:all var(--tr)}
-.slot:hover{border-color:var(--gold-border);background:rgba(255,185,48,.04);transform:translateY(-2px);box-shadow:0 0 16px rgba(255,185,48,.12)}
-.slot-num{position:absolute;top:7px;left:9px;font-size:10px;font-weight:700;color:var(--txt-s)}
-.slot-plus{font-size:24px;color:var(--bdr-hi);transition:var(--tr)}
-.slot:hover .slot-plus{color:var(--gold)}
-.slot-hint{font-size:9.5px;color:var(--txt-s)}
-.slot.filled{border-color:transparent;cursor:default}
-.slot.filled:hover{transform:none;box-shadow:none}
-.slot-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.slot-grd{position:absolute;bottom:0;left:0;right:0;height:40%;background:linear-gradient(to top,rgba(5,5,8,.9),transparent)}
-.slot-fn{position:absolute;bottom:5px;left:0;right:0;padding:0 6px;font-size:8.5px;
-  color:rgba(255,255,255,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
-.slot-del{position:absolute;top:5px;right:5px;width:20px;height:20px;border-radius:50%;
-  background:rgba(5,5,8,.8);border:1px solid rgba(255,255,255,.15);color:var(--txt-m);font-size:9px;
-  display:flex;align-items:center;justify-content:center;opacity:0;transition:var(--tr);cursor:pointer}
-.slot.filled:hover .slot-del{opacity:1}
-.slot-del:hover{background:var(--red)!important;color:#fff!important}
-.slot-stat{position:absolute;bottom:6px;right:6px;width:20px;height:20px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;font-size:9.5px;backdrop-filter:blur(4px)}
-.slot-stat.pend{background:rgba(30,30,40,.85);color:var(--txt-s)}
-.slot-stat.proc{background:rgba(91,143,255,.9);color:#fff}
-.slot-stat.ok{background:rgba(0,214,143,.9);color:#030f09}
-.slot-stat.err{background:rgba(255,85,85,.9);color:#fff}
-
-/* ── PROMPT AREA ── */
-.prompt-card{background:var(--glass);border:1px solid var(--bdr-s);border-radius:var(--r-lg);
-  padding:22px 24px;margin-top:24px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
-.prompt-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px}
-.prompt-title{font-size:14px;font-weight:700;color:var(--txt)}
-.prompt-sub{font-size:12px;color:var(--txt-m)}
-.presets{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
-.prs{padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;
-  background:var(--glass);border:1px solid var(--bdr-s);color:var(--txt-m);
-  cursor:pointer;transition:all var(--tr)}
-.prs:hover,.prs.on{background:rgba(160,102,255,.1);border-color:rgba(160,102,255,.3);color:var(--purple)}
-.prompt-textarea{width:100%;min-height:76px;background:rgba(255,255,255,.03);
-  border:1px solid var(--bdr-s);border-radius:var(--r);padding:13px 16px;
-  font-size:14px;color:var(--txt);resize:none;outline:none;transition:var(--tr);line-height:1.55}
-.prompt-textarea:focus{border-color:var(--gold-border);box-shadow:0 0 0 3px rgba(255,185,48,.07)}
-.prompt-textarea::placeholder{color:var(--txt-s)}
-.prompt-note{font-size:11.5px;color:var(--txt-s);margin-top:8px;display:flex;align-items:flex-start;gap:6px;line-height:1.5}
-.prompt-note-icon{flex-shrink:0;margin-top:1px}
-
-/* ── BUTTONS ── */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 22px;
-  border-radius:var(--r);font-family:inherit;font-size:13.5px;font-weight:600;transition:all var(--tr);white-space:nowrap}
-.btn-gold{background:var(--g-gold);color:#07050A;border:none}
-.btn-gold:hover:not(:disabled){filter:brightness(1.1);transform:translateY(-2px);box-shadow:var(--sh-gold),0 0 40px rgba(255,185,48,.15)}
-.btn-gold:active:not(:disabled){transform:translateY(0)}
-.btn-gold:disabled{opacity:.33;cursor:not-allowed;transform:none;filter:none;box-shadow:none}
-.btn-ghost{background:var(--glass);color:var(--txt-m);border:1px solid var(--bdr-s)}
-.btn-ghost:hover{background:rgba(255,255,255,.06);color:var(--txt);border-color:var(--bdr-hi)}
-.btn-lg{padding:13px 30px;font-size:15px}
-.btn-xl{padding:15px 40px;font-size:16px;font-weight:700;letter-spacing:-.2px}
-.ctrl{display:flex;align-items:center;gap:10px;margin-top:24px;flex-wrap:wrap}
-
-/* ── PROGRESS ── */
-.prog-wrap{background:var(--glass);border:1px solid var(--bdr-s);border-radius:var(--r-lg);
-  padding:22px 24px;margin:22px 0}
-.prog-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-.prog-lbl{font-size:14px;font-weight:600}
-.prog-n{font-size:15px;font-weight:800;background:var(--g-gold);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.prog-track{height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}
-.prog-fill{height:100%;border-radius:3px;background:var(--g-rainbow);background-size:200%;
-  transition:width .45s ease;width:0;animation:shimmer 2s linear infinite}
-@keyframes shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
-.prog-sub{font-size:12px;color:var(--txt-m);margin-top:9px;min-height:16px}
-.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600}
-.pill.proc{background:var(--blue-glow);color:var(--blue-lt);border:1px solid var(--blue-border)}
-.pill.ok{background:var(--emerald-glow);color:var(--emerald);border:1px solid var(--emerald-border)}
-
-/* ── DOWNLOAD / RESULTS ── */
-.dl-hero{text-align:center;padding:50px 24px;border-radius:var(--r-lg);margin-bottom:26px;
-  position:relative;overflow:hidden;background:var(--glass);border:1px solid var(--bdr-s);box-shadow:var(--sh-lg)}
-.dl-hero::before{content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse at 50% -5%,rgba(255,185,48,.12) 0%,transparent 60%);pointer-events:none}
-.dl-hero::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:var(--g-gold);opacity:.35}
-.dl-em{font-size:50px;margin-bottom:12px;animation:bounceIn .5s ease}
-@keyframes bounceIn{0%{transform:scale(.4);opacity:0}65%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
-.dl-h{font-family:'Syne',sans-serif;font-size:24px;font-weight:900;margin-bottom:5px}
-.dl-p{font-size:13px;color:var(--txt-m);margin-bottom:24px}
-
-/* ── COMPARISON SLIDER ── */
-.cs-outer{border-radius:var(--r-lg);overflow:hidden;position:relative;user-select:none;
-  box-shadow:var(--sh-lg);border:1px solid var(--bdr-s)}
-.cs-after{position:relative;width:100%;height:400px}
-.cs-after img{width:100%;height:100%;object-fit:cover;display:block}
-.cs-before{position:absolute;top:0;left:0;height:100%;overflow:hidden;clip-path:inset(0 50% 0 0)}
-.cs-before img{width:100%;height:400px;object-fit:cover;display:block}
-.cs-div{position:absolute;top:0;bottom:0;left:50%;width:2px;background:#fff;
-  cursor:ew-resize;z-index:10;transform:translateX(-50%);box-shadow:0 0 12px rgba(0,0,0,.5)}
-.cs-handle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  width:42px;height:42px;border-radius:50%;background:#fff;
-  box-shadow:0 2px 16px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;
-  color:#333;font-size:12px;font-weight:700;gap:1px}
-.cs-labels{display:grid;grid-template-columns:1fr 1fr}
-.cs-lb{padding:10px 16px;font-size:12px;font-weight:600;text-align:center;background:var(--glass-el,rgba(255,255,255,.05));border-top:1px solid var(--bdr)}
-.cs-lb.before{color:var(--txt-m);border-right:1px solid var(--bdr)}
-.cs-lb.after{color:var(--gold);background:rgba(255,185,48,.06)}
-.drag-hint{text-align:center;font-size:11.5px;color:var(--txt-s);margin-top:8px}
-
-/* ── BATCH RESULTS ── */
-.res-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
-.rc{background:var(--glass);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden;transition:var(--tr)}
-.rc:hover{border-color:var(--bdr-s);transform:translateY(-3px);box-shadow:var(--sh)}
-.rc-imgs{display:grid;grid-template-columns:1fr 1fr}
-.rc-imgs img{aspect-ratio:1;object-fit:cover;width:100%}
-.rc-imgs img:first-child{opacity:.5;border-right:1px solid var(--bdr)}
-.rc-lbls{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--bdr)}
-.rc-lb{font-size:9px;text-align:center;padding:4px;color:var(--txt-s);border-right:1px solid var(--bdr)}
-.rc-lb:last-child{border-right:none;color:var(--gold)}
-.rc-ft{display:flex;align-items:center;gap:7px;padding:7px 10px;border-top:1px solid var(--bdr)}
-.rc-fn{flex:1;font-size:9.5px;color:var(--txt-m);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-
-/* ── SPINNER ── */
-.spin{display:inline-block;width:12px;height:12px;flex-shrink:0;
-  border:1.8px solid rgba(255,255,255,.12);border-top-color:currentColor;
-  border-radius:50%;animation:rot .65s linear infinite}
-@keyframes rot{to{transform:rotate(360deg)}}
-
-/* ── TOAST ── */
-.toast-box{position:fixed;bottom:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
-.toast{background:rgba(24,24,38,.95);border:1px solid var(--bdr-s);border-radius:var(--r);
-  padding:12px 16px;font-size:12.5px;color:var(--txt);display:flex;align-items:center;gap:10px;
-  box-shadow:var(--sh-lg);max-width:300px;animation:tIn .28s cubic-bezier(.34,1.56,.64,1);
-  pointer-events:auto;backdrop-filter:blur(20px)}
-@keyframes tIn{from{opacity:0;transform:translateX(120%) scale(.8)}to{opacity:1;transform:translateX(0) scale(1)}}
-@keyframes tOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(120%)}}
-.toast.ok{border-left:3px solid var(--emerald)}
-.toast.err{border-left:3px solid var(--red)}
-.toast.info{border-left:3px solid var(--blue)}
-.toast.warn{border-left:3px solid var(--gold)}
-
-/* ── API STATUS BANNER ── */
-.api-banner{display:flex;align-items:flex-start;gap:12px;padding:14px 18px;border-radius:var(--r);margin-bottom:20px}
-.api-banner.warn{background:rgba(255,185,48,.07);border:1px solid var(--gold-border)}
-.api-banner.ok{background:var(--emerald-glow);border:1px solid var(--emerald-border)}
-.ab-icon{font-size:18px;flex-shrink:0;padding-top:1px}
-.ab-body{flex:1}
-.ab-title{font-size:13px;font-weight:600;margin-bottom:3px}
-.ab-body p{font-size:12px;color:var(--txt-m);line-height:1.55}
-.ab-body a{color:var(--blue-lt);text-decoration:none}
-.ab-body a:hover{text-decoration:underline}
-.api-banner.warn .ab-title{color:var(--gold-lt)}
-.api-banner.ok .ab-title{color:var(--emerald)}
-
-/* ── RESPONSIVE ── */
-@media(max-width:640px){
-  .snav{display:none}.main{padding:20px 14px 80px}.sh-title{font-size:22px}
-  .sgrid{grid-template-columns:repeat(3,1fr);gap:8px}
-  .cs-after,.cs-before img{height:260px}.res-grid{grid-template-columns:repeat(2,1fr)}
-  .btn-xl{padding:13px 26px;font-size:14px}.dl-hero{padding:36px 16px}
-  .prompt-card{padding:16px 16px}
-}
-@media(max-width:400px){.sgrid{grid-template-columns:repeat(2,1fr)}}
-</style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Platelight — AI Background Studio for Food Photography</title>
+<meta name="description" content="Batch-replace food photo backgrounds with Hugging Face AI, entirely in your browser. Built for cloud-kitchen photo production." />
+<meta name="theme-color" content="#14120f" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="assets/icons/icon-192.png" />
+<link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<div class="mesh"><div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div></div>
-<div class="grid-bg"></div>
-<div class="page">
 
-<!-- SETTINGS OVERLAY -->
-<div class="settings-overlay" id="settingsOverlay">
-  <div class="settings-box">
-    <div class="settings-hdr">
-      <div class="settings-title">⚙️ Settings</div>
-      <div class="settings-close" onclick="toggleSettings()">✕</div>
+<div id="toast-container" aria-live="polite"></div>
+
+<div id="app">
+
+  <header id="app-header">
+    <div class="brand">
+      <svg class="brand__mark" viewBox="0 0 40 40" width="30" height="30" aria-hidden="true">
+        <circle cx="20" cy="20" r="17" fill="none" stroke="var(--accent-amber)" stroke-width="2.4"/>
+        <path d="M20 6 L20 12 M34 20 L28 20 M20 34 L20 28 M6 20 L12 20" stroke="var(--accent-teal)" stroke-width="2.2" stroke-linecap="round"/>
+        <circle cx="20" cy="20" r="6.5" fill="var(--accent-amber)"/>
+      </svg>
+      <span class="brand__word">Platelight</span>
     </div>
-    <div class="field-label">Hugging Face API Token (Free)</div>
-    <input class="field-input" id="hfTokenInput" type="password"
-      placeholder="hf_xxxxxxxxxxxxxxxxxxxxxxxx"/>
-    <div class="field-hint">
-      Free token se AI faster aur reliable ho jaati hai.<br/>
-      <a href="https://huggingface.co/settings/tokens" target="_blank">👉 huggingface.co/settings/tokens</a>
-      pe free account banao → New Token (read only) → copy karo.<br/>
-      <strong style="color:var(--txt)">Token optional hai</strong> — bina token ke bhi kaam karta hai (slow ho sakta hai).
-    </div>
-    <div class="token-status" id="tokenStatus"></div>
-    <div class="ctrl" style="margin-top:18px">
-      <button class="btn btn-gold" onclick="saveToken()">✓ Save Token</button>
-      <button class="btn btn-ghost" onclick="clearToken()">Clear</button>
-    </div>
-  </div>
+
+    <nav id="primary-nav">
+      <button class="nav-btn is-active" data-nav="workspace" type="button">Workspace</button>
+      <button class="nav-btn" data-nav="settings" type="button">Settings</button>
+    </nav>
+
+    <button id="nav-token-badge" class="nav-badge" type="button" title="Token status — open Settings">Add a token</button>
+  </header>
+
+  <main id="view-workspace" class="view">
+
+    <section class="panel" id="upload-panel">
+      <div class="panel__row panel__row--toggles">
+        <div class="segmented" id="batch-mode-toggle" role="group" aria-label="Batch or single image">
+          <button type="button" class="is-active" data-batchmode="batch">Batch (up to 10)</button>
+          <button type="button" data-batchmode="single">Single image</button>
+        </div>
+        <div class="segmented" id="proc-mode-toggle" role="group" aria-label="Processing mode">
+          <button type="button" class="is-active" data-procmode="fast" title="One instruction-based edit call per image">Fast Mode</button>
+          <button type="button" data-procmode="composite" title="Locally cut out the food, reuse one AI backdrop for the whole batch">Composite Mode</button>
+        </div>
+      </div>
+
+      <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="Upload photos">
+        <svg viewBox="0 0 64 64" width="46" height="46" aria-hidden="true" class="dropzone__icon">
+          <rect x="8" y="14" width="48" height="38" rx="4" fill="none" stroke="currentColor" stroke-width="2.5"/>
+          <circle cx="21" cy="26" r="4.5" fill="none" stroke="currentColor" stroke-width="2.5"/>
+          <path d="M8 46 L22 34 L31 42 L42 30 L56 44" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <p id="dropzone-hint">Drag up to 10 photos here, or click to browse</p>
+        <input type="file" id="file-input" accept="image/*" multiple hidden />
+      </div>
+
+      <div id="thumb-grid" class="thumb-grid" hidden></div>
+
+      <label class="field-label" for="prompt-input">Describe the new background</label>
+      <textarea id="prompt-input" rows="2" placeholder="e.g. Dark rustic wooden table with premium restaurant lighting, keeping the food exactly the same"></textarea>
+
+      <div id="prompt-examples" class="chip-row">
+        <button type="button" data-example="Dark rustic wooden table with premium restaurant lighting, keeping the food exactly the same">Rustic wood table</button>
+        <button type="button" data-example="Clean white marble surface, soft daylight, minimal shadows, keeping the food exactly the same">White marble</button>
+        <button type="button" data-example="Moody dark slate backdrop with warm side lighting, keeping the food exactly the same">Moody slate</button>
+        <button type="button" data-example="Bright outdoor cafe table with natural sunlight, keeping the food exactly the same">Outdoor cafe</button>
+      </div>
+
+      <div class="panel__row panel__row--start">
+        <span id="image-count-label" class="image-count"></span>
+        <button id="start-btn" class="btn btn--primary" type="button" disabled>Start Processing</button>
+      </div>
+    </section>
+
+    <section class="panel" id="processing-panel" hidden>
+      <div class="filmstrip">
+        <div class="filmstrip__track"><div id="progress-fill" class="filmstrip__fill"></div></div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat"><span class="stat__value" id="stat-total">0</span><span class="stat__label">Total</span></div>
+        <div class="stat"><span class="stat__value" id="stat-done">0</span><span class="stat__label">Done</span></div>
+        <div class="stat"><span class="stat__value" id="stat-failed">0</span><span class="stat__label">Failed</span></div>
+        <div class="stat"><span class="stat__value" id="stat-remaining">0</span><span class="stat__label">Remaining</span></div>
+        <div class="stat"><span class="stat__value" id="stat-percent">0%</span><span class="stat__label">Progress</span></div>
+      </div>
+
+      <div id="contact-sheet" class="contact-sheet"></div>
+
+      <div class="panel__row panel__row--actions">
+        <button id="retry-failed-btn" class="btn btn--warn" type="button" hidden>Retry Failed</button>
+        <button id="download-zip-btn" class="btn btn--primary" type="button" disabled>Download ZIP</button>
+        <button id="download-all-btn" class="btn" type="button" disabled>Download All Individually</button>
+        <button id="new-batch-btn" class="btn btn--ghost" type="button">Start New Batch</button>
+      </div>
+    </section>
+
+  </main>
+
+  <main id="view-settings" class="view" hidden>
+
+    <section class="panel" id="token-panel">
+      <div class="panel__row panel__row--header">
+        <h2>Hugging Face Tokens</h2>
+        <button id="add-token-btn" class="btn btn--primary" type="button">+ Add Token</button>
+      </div>
+
+      <div class="vault-bar">
+        <span id="vault-status">Checking vault…</span>
+        <div class="vault-bar__actions">
+          <button id="unlock-vault-btn" class="btn btn--ghost" type="button" hidden>Unlock</button>
+          <button id="set-pin-btn" class="btn btn--ghost" type="button">Set a PIN</button>
+          <button id="remove-pin-btn" class="btn btn--ghost" type="button" hidden>Remove PIN</button>
+        </div>
+      </div>
+
+      <div id="token-dashboard" class="token-dashboard"></div>
+    </section>
+
+    <section class="panel" id="advanced-panel">
+      <h2>Advanced</h2>
+      <p class="hint">Only change these if Hugging Face has moved a model to a different provider — check the model's "Inference Providers" panel on huggingface.co first.</p>
+
+      <label class="field-label" for="edit-model-input">Fast Mode edit model ID</label>
+      <input type="text" id="edit-model-input" placeholder="Qwen/Qwen-Image-Edit-2509" />
+
+      <label class="field-label" for="backdrop-model-input">Composite Mode backdrop model ID</label>
+      <input type="text" id="backdrop-model-input" placeholder="black-forest-labs/FLUX.1-schnell" />
+
+      <label class="field-label" for="concurrency-range">Parallel images at once: <span id="concurrency-value">3</span></label>
+      <input type="range" id="concurrency-range" min="1" max="3" step="1" />
+
+      <button id="save-advanced-btn" class="btn btn--primary" type="button">Save Advanced Settings</button>
+    </section>
+
+  </main>
+
 </div>
 
-<!-- HEADER -->
-<header class="hdr">
-  <div class="logo"><div class="logo-mark">🎨</div>BG Changer Pro</div>
-  <nav class="snav" id="stepNav">
-    <div class="sn active" data-s="1"><div class="sn-n">1</div><span>Images</span></div>
-    <span class="sn-arr">›</span>
-    <div class="sn" data-s="2"><div class="sn-n">2</div><span>Prompt</span></div>
-    <span class="sn-arr">›</span>
-    <div class="sn" data-s="3"><div class="sn-n">3</div><span>Processing</span></div>
-    <span class="sn-arr">›</span>
-    <div class="sn" data-s="4"><div class="sn-n">4</div><span>Download</span></div>
-  </nav>
-  <div class="hdr-right">
-    <span class="badge-free">✦ Free</span>
-    <div class="settings-btn" onclick="toggleSettings()" title="Settings">⚙</div>
-  </div>
-</header>
-
-<main class="main">
-
-<!-- STEP 1: Upload Images -->
-<section class="sec on" id="s1">
-  <div class="sh">
-    <div class="sh-eye">Step 1 of 4</div>
-    <h1 class="sh-title">Food images <span>upload karo</span></h1>
-    <p class="sh-sub">1 ya 10 images ek saath — jinka background change karna hai. Phir next step mein sirf prompt likhna hai.</p>
-  </div>
-
-  <div id="apiBanner"></div>
-
-  <label class="ulbl" id="mainZone" for="mainInput">
-    <input type="file" id="mainInput" accept="image/*" multiple/>
-    <div class="uz-ring">📸</div>
-    <div class="uz-h">Images yahan drop karo ya click karo</div>
-    <div class="uz-p">1 se 10 images ek baar mein — JPG, PNG, WebP</div>
-    <span class="uz-chip">✦ AI sirf background change karega, baaki sab same rahega</span>
-  </label>
-
-  <div class="slots-hdr" id="slotsHdr" style="display:none">
-    <div class="slots-info">
-      <span class="slots-title">Selected Images</span>
-      <div class="sdots" id="sdots">
-        <div class="sdot" id="sd0"></div><div class="sdot" id="sd1"></div>
-        <div class="sdot" id="sd2"></div><div class="sdot" id="sd3"></div>
-        <div class="sdot" id="sd4"></div><div class="sdot" id="sd5"></div>
-        <div class="sdot" id="sd6"></div><div class="sdot" id="sd7"></div>
-        <div class="sdot" id="sd8"></div><div class="sdot" id="sd9"></div>
-      </div>
-      <span class="scnt has" id="imgCnt">0 / 10</span>
+<!-- Add Token modal -->
+<dialog id="token-modal" class="modal">
+  <form id="token-modal-form" method="dialog">
+    <h3>Add Hugging Face Token</h3>
+    <label class="field-label" for="token-label-input">Label (optional)</label>
+    <input type="text" id="token-label-input" placeholder="e.g. Studio Account 2" />
+    <label class="field-label" for="token-value-input">Access token</label>
+    <input type="password" id="token-value-input" placeholder="hf_xxxxxxxxxxxxxxxxxxxx" autocomplete="off" />
+    <div id="token-pin-row" hidden>
+      <label class="field-label" for="token-pin-input">Vault PIN</label>
+      <input type="password" id="token-pin-input" autocomplete="off" />
     </div>
-    <label class="add-lbl" for="addMore"><input type="file" id="addMore" accept="image/*" multiple style="display:none"/> + Add More</label>
-  </div>
-  <div class="sgrid" id="slotsGrid" style="display:none"></div>
-
-  <div class="ctrl">
-    <button class="btn btn-gold btn-lg" id="toStep2" disabled onclick="goStep(2)">
-      Next: Background Describe Karo →
-    </button>
-  </div>
-</section>
-
-<!-- STEP 2: Prompt -->
-<section class="sec" id="s2">
-  <div class="sh">
-    <div class="sh-eye">Step 2 of 4</div>
-    <h1 class="sh-title">Background <span>describe karo</span></h1>
-    <p class="sh-sub">Sirf likho kaisa background chahiye — AI samjhega. Food aur props bilkul same rahenge.</p>
-  </div>
-
-  <div class="prompt-card">
-    <div class="prompt-hdr">
-      <div>
-        <div class="prompt-title">Quick Presets</div>
-        <div class="prompt-sub">Click karo ya khud likhо</div>
-      </div>
+    <div class="modal__actions">
+      <button type="button" id="token-modal-cancel" class="btn btn--ghost">Cancel</button>
+      <button type="submit" class="btn btn--primary">Save Token</button>
     </div>
-    <div class="presets" id="presets">
-      <button class="prs" onclick="setPreset(this,'dark blue rustic stone wall, food photography studio')">🔵 Studio Blue</button>
-      <button class="prs" onclick="setPreset(this,'deep black marble texture, luxury food photography')">⚫ Black Marble</button>
-      <button class="prs" onclick="setPreset(this,'warm terracotta clay textured background, rustic kitchen')">🟫 Terracotta</button>
-      <button class="prs" onclick="setPreset(this,'dark forest green concrete wall, moody food photography')">🌿 Forest Green</button>
-      <button class="prs" onclick="setPreset(this,'dark grey rough stone texture background, restaurant')">🪨 Dark Stone</button>
-      <button class="prs" onclick="setPreset(this,'pure matte white background, clean minimal food photography studio')">🤍 Clean White</button>
-      <button class="prs" onclick="setPreset(this,'warm wooden plank table surface, rustic food photography')">🪵 Wooden Table</button>
-      <button class="prs" onclick="setPreset(this,'deep navy blue velvet background, luxury restaurant food')">💙 Navy Velvet</button>
+  </form>
+</dialog>
+
+<!-- PIN modal (unlock / set / change) -->
+<dialog id="pin-modal" class="modal">
+  <form id="pin-modal-form">
+    <h3 id="pin-modal-title">Enter PIN</h3>
+    <label class="field-label" for="pin-input">PIN</label>
+    <input type="password" id="pin-input" autocomplete="off" inputmode="numeric" />
+    <div id="pin-confirm-row" hidden>
+      <label class="field-label" for="pin-confirm-input">Confirm PIN</label>
+      <input type="password" id="pin-confirm-input" autocomplete="off" inputmode="numeric" />
     </div>
-    <textarea class="prompt-textarea" id="bgPrompt" rows="3"
-      placeholder="Describe your background: 'dark blue rustic stone wall' ya 'warm terracotta background with soft lighting'..."></textarea>
-    <div class="prompt-note">
-      <span class="prompt-note-icon">💡</span>
-      <span>AI automatically samjhega ke sirf background change karna hai. Food, props, lighting, shadows — sab original rahega. Detailed description = better result.</span>
+    <p id="pin-modal-error" class="field-error"></p>
+    <div class="modal__actions">
+      <button type="button" id="pin-modal-cancel" class="btn btn--ghost">Cancel</button>
+      <button type="submit" class="btn btn--primary">Confirm</button>
     </div>
+  </form>
+</dialog>
+
+<!-- Generic confirm modal -->
+<dialog id="confirm-modal" class="modal">
+  <p id="confirm-modal-message"></p>
+  <div class="modal__actions">
+    <button type="button" id="confirm-modal-cancel" class="btn btn--ghost">Cancel</button>
+    <button type="button" id="confirm-modal-ok" class="btn btn--danger">Confirm</button>
   </div>
+</dialog>
 
-  <div class="ctrl">
-    <button class="btn btn-ghost" onclick="goStep(1)">← Back</button>
-    <button class="btn btn-gold btn-lg" id="startAiBtn" onclick="startProcessing()">
-      ✨ Start AI Processing
-    </button>
-  </div>
-</section>
-
-<!-- STEP 3: Processing -->
-<section class="sec" id="s3">
-  <div class="sh">
-    <div class="sh-eye">Step 3 of 4</div>
-    <h1 class="sh-title"><span>AI Processing</span> <span class="pill proc" id="procPill"><span class="spin"></span> Running</span></h1>
-    <p class="sh-sub">InstructPix2Pix AI har image ka background replace kar raha hai — food aur props safe hain.</p>
-  </div>
-  <div class="prog-wrap">
-    <div class="prog-top"><span class="prog-lbl">Overall Progress</span><span class="prog-n" id="progN">0 / 0</span></div>
-    <div class="prog-track"><div class="prog-fill" id="progF"></div></div>
-    <div class="prog-sub" id="progS">AI initialize ho raha hai...</div>
-  </div>
-  <div class="sgrid" id="procGrid"></div>
-</section>
-
-<!-- STEP 4: Download -->
-<section class="sec" id="s4">
-  <div class="sh">
-    <div class="sh-eye">Step 4 of 4</div>
-    <h1 class="sh-title">Sab <span>tayyar!</span> ✓</h1>
-  </div>
-  <div class="dl-hero">
-    <div class="dl-em">🎉</div>
-    <div class="dl-h" id="dlH">Images ready hain</div>
-    <div class="dl-p">Slider drag karo — before/after compare karo</div>
-    <button class="btn btn-gold btn-xl" id="dlBtn" onclick="doDownload()">⬇️ Download</button>
-  </div>
-  <div id="csWrap" style="display:none;margin-bottom:24px">
-    <div class="cs-outer" id="csEl">
-      <div class="cs-after"><img id="csAfter" src="" alt="result"/></div>
-      <div class="cs-before"><img id="csBefore" src="" alt="original"/></div>
-      <div class="cs-div" id="csDiv"><div class="cs-handle">◀▶</div></div>
-    </div>
-    <div class="cs-labels"><div class="cs-lb before">📷 Original</div><div class="cs-lb after">✨ AI Changed</div></div>
-    <div class="drag-hint">← Drag to compare →</div>
-  </div>
-  <div class="res-grid" id="resGrid"></div>
-  <div class="ctrl" style="margin-top:28px">
-    <button class="btn btn-ghost" onclick="processMore()">Process More</button>
-    <button class="btn btn-ghost" onclick="goStep(1)">Start Over</button>
-  </div>
-</section>
-
-</main></div>
-<div class="toast-box" id="toastBox"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-<script>
-/* ══════════════════════════════════════════════════════
-   STATE
-══════════════════════════════════════════════════════ */
-const A = { images:[], results:[] };
-let HF_TOKEN = localStorage.getItem('hf_token') || '';
-
-/* ══════════════════════════════════════════════════════
-   STEP NAV
-══════════════════════════════════════════════════════ */
-window.goStep = n => {
-  document.querySelectorAll('.sec').forEach(s => s.classList.remove('on'));
-  document.getElementById('s'+n).classList.add('on');
-  document.querySelectorAll('.sn[data-s]').forEach(el => {
-    const s=+el.dataset.s;
-    el.classList.toggle('active',s===n);
-    el.classList.toggle('done',s<n);
-    el.querySelector('.sn-n').textContent = s<n?'✓':s;
-  });
-  window.scrollTo({top:0,behavior:'smooth'});
-};
-
-/* ══════════════════════════════════════════════════════
-   SETTINGS
-══════════════════════════════════════════════════════ */
-window.toggleSettings = () => {
-  const ov = document.getElementById('settingsOverlay');
-  ov.classList.toggle('on');
-  document.getElementById('hfTokenInput').value = HF_TOKEN;
-  if(ov.classList.contains('on')) updateTokenStatus();
-};
-window.saveToken = () => {
-  const t = document.getElementById('hfTokenInput').value.trim();
-  HF_TOKEN = t;
-  if(t) localStorage.setItem('hf_token',t);
-  else localStorage.removeItem('hf_token');
-  updateTokenStatus();
-  toast(t?'Token saved! AI faster hogi.':'Token cleared.'  ,t?'ok':'info');
-  setTimeout(toggleSettings, 800);
-  renderApiBanner();
-};
-window.clearToken = () => {
-  HF_TOKEN=''; localStorage.removeItem('hf_token');
-  document.getElementById('hfTokenInput').value='';
-  updateTokenStatus();
-};
-function updateTokenStatus(){
-  const el=document.getElementById('tokenStatus');
-  if(HF_TOKEN){ el.innerHTML=`<span style="color:var(--emerald)">✓</span> Token set — Fast mode active`; }
-  else { el.innerHTML=`<span style="color:var(--txt-s)">○</span> No token — Using public endpoint (may be slow)`; }
-}
-function renderApiBanner(){
-  const el=document.getElementById('apiBanner');
-  if(HF_TOKEN){
-    el.innerHTML=`<div class="api-banner ok"><span class="ab-icon">⚡</span><div class="ab-body"><div class="ab-title">Fast Mode — HF Token Active</div><p>AI calls directly HF Inference API se — fast aur reliable.</p></div></div>`;
-  } else {
-    el.innerHTML=`<div class="api-banner warn"><span class="ab-icon">💡</span><div class="ab-body"><div class="ab-title">Free Public Mode (No Token)</div><p>Bina token ke public space use ho raha hai. Better speed ke liye <a href="https://huggingface.co/settings/tokens" target="_blank">free HF token add karo</a> — ⚙ button se.</p></div></div>`;
-  }
-}
-renderApiBanner();
-
-/* ══════════════════════════════════════════════════════
-   IMAGE UPLOAD
-══════════════════════════════════════════════════════ */
-const mainInput = document.getElementById('mainInput');
-const addMore   = document.getElementById('addMore');
-const mainZone  = document.getElementById('mainZone');
-
-mainInput.addEventListener('change', e => addImages(e.target.files));
-addMore.addEventListener('change',   e => addImages(e.target.files));
-mainZone.addEventListener('dragover', e => { e.preventDefault(); mainZone.classList.add('drag'); });
-mainZone.addEventListener('dragleave',e => { if(!mainZone.contains(e.relatedTarget)) mainZone.classList.remove('drag'); });
-mainZone.addEventListener('drop', e => {
-  e.preventDefault(); mainZone.classList.remove('drag');
-  addImages(e.dataTransfer.files);
-});
-
-function addImages(files){
-  if(!files||!files.length) return;
-  const imgs=[...files].filter(f=>f.type.startsWith('image/'));
-  const space=10-A.images.length;
-  if(space<=0){toast('Max 10 images!','warn');return;}
-  if(imgs.length>space)toast(`Sirf ${space} more li hain.`,'info');
-  A.images.push(...imgs.slice(0,space).map(f=>({file:f,name:f.name})));
-  renderSlots();
-  document.getElementById('slotsHdr').style.display='';
-  document.getElementById('slotsGrid').style.display='';
-  document.getElementById('toStep2').disabled = A.images.length===0;
-  mainZone.style.display='none';
-  mainInput.value=''; addMore.value='';
-}
-
-function renderSlots(){
-  const g=document.getElementById('slotsGrid'); g.innerHTML='';
-  for(let i=0;i<10;i++){
-    const item=A.images[i];
-    const sl=document.createElement('div');
-    sl.className='slot'+(item?' filled':''); sl.id='sl'+i;
-    if(item){
-      const url=URL.createObjectURL(item.file);
-      sl.innerHTML=`<img class="slot-img" src="${url}"/><div class="slot-grd"></div><div class="slot-num">${i+1}</div><div class="slot-fn">${item.name}</div><div class="slot-del" onclick="rmImg(${i})">✕</div><div class="slot-stat pend" id="ss${i}">○</div>`;
-    } else if(i<A.images.length+1){
-      sl.innerHTML=`<div class="slot-num">${i+1}</div><div class="slot-plus">+</div><div class="slot-hint">Add</div>`;
-      sl.onclick=()=>addMore.click();
-    } else {
-      sl.innerHTML=`<div class="slot-num" style="color:var(--txt-s)">${i+1}</div>`;
-      sl.style.opacity='.35';
-    }
-    g.appendChild(sl);
-    const dot=document.getElementById('sd'+i);
-    if(dot) dot.classList.toggle('on',!!item);
-  }
-  const cnt=document.getElementById('imgCnt');
-  cnt.textContent=A.images.length+' / 10';
-}
-window.rmImg=i=>{
-  A.images.splice(i,1);
-  renderSlots();
-  if(A.images.length===0){
-    document.getElementById('slotsHdr').style.display='none';
-    document.getElementById('slotsGrid').style.display='none';
-    mainZone.style.display='';
-    document.getElementById('toStep2').disabled=true;
-  }
-};
-
-/* ══════════════════════════════════════════════════════
-   PROMPT
-══════════════════════════════════════════════════════ */
-window.setPreset=(btn,text)=>{
-  document.querySelectorAll('.prs').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
-  document.getElementById('bgPrompt').value=text;
-};
-
-function buildFullPrompt(userPrompt){
-  return `Professional food photography edit. Change ONLY the background to: ${userPrompt}. `+
-    `Preserve every single food item, copper vessel, clay pot, spice dish, garnish, curry leaf, prop, `+
-    `and decoration in their exact positions and appearance. `+
-    `Keep identical camera angle, lighting direction, natural shadows and highlights. `+
-    `Only the background table surface and wall changes. Ultra-realistic. 8K quality. No artifacts.`;
-}
-
-/* ══════════════════════════════════════════════════════
-   AI PROCESSING
-══════════════════════════════════════════════════════ */
-window.startProcessing = async () => {
-  const prompt = document.getElementById('bgPrompt').value.trim();
-  if(!prompt){ toast('Background describe karo pehle!','err'); return; }
-  if(!A.images.length){ toast('Images upload karo pehle!','err'); return; }
-
-  goStep(3);
-  A.results=[];
-
-  const pg=document.getElementById('procGrid'); pg.innerHTML='';
-  A.images.forEach(({file,name},i)=>{
-    const c=document.createElement('div');c.className='slot filled';c.id='pc'+i;
-    c.innerHTML=`<img class="slot-img" src="${URL.createObjectURL(file)}"/><div class="slot-grd"></div><div class="slot-num">${i+1}</div><div class="slot-fn">${name}</div><div class="slot-stat pend" id="ps${i}">○</div>`;
-    pg.appendChild(c);
-  });
-
-  const total=A.images.length; let done=0,errs=0;
-  setP(2,total,'AI model preparing...');
-
-  const fullPrompt=buildFullPrompt(prompt);
-  const negPrompt='blurry, low quality, artifacts, changed food, different props, moved objects, distorted utensils, deformed bowl, changed ingredients';
-
-  for(let i=0;i<total;i++){
-    const {file,name}=A.images[i];
-    const stat=document.getElementById('ps'+i);
-    stat.className='slot-stat proc';
-    stat.innerHTML='<span class="spin" style="width:9px;height:9px;border-width:1.5px"></span>';
-    setP(Math.round(5+i/total*85),total,`Processing ${i+1}/${total}: ${name}`);
-
-    try{
-      const result=await callAI(file, fullPrompt, negPrompt);
-      A.results.push({name:noExt(name)+'_ai_bg.png', blob:result, orig:file});
-      stat.className='slot-stat ok'; stat.textContent='✓';
-      document.querySelector('#pc'+i+' .slot-img').src=URL.createObjectURL(result);
-      done++;
-    } catch(err){
-      console.error('Error on',name,err);
-      stat.className='slot-stat err'; stat.textContent='✗';
-      toast(`${name}: ${err.message||'Failed'}. Retry karo.`,'err');
-      errs++;
-    }
-    setP(Math.round(5+(i+1)/total*85),total,`Done: ${done} ✓`+(errs?` | Failed: ${errs} ✗`:''));
-  }
-
-  setP(100,total,`Complete! ${done}/${total} images processed.`);
-  document.getElementById('procPill').className='pill ok';
-  document.getElementById('procPill').textContent='✓ Complete';
-  setTimeout(()=>{
-    goStep(4); buildDownload(done,A.images.length===1);
-    if(errs) toast(`${errs} failed. Token check karo.`,'warn');
-    else toast(`${done} images ready! Download karo.`,'ok');
-  },700);
-};
-
-function setP(pct,total,text){
-  pct=Math.min(pct,100);
-  document.getElementById('progF').style.width=pct+'%';
-  document.getElementById('progN').textContent=Math.round(pct/100*total)+' / '+total;
-  document.getElementById('progS').textContent=text;
-}
-
-/* ══════════════════════════════════════════════════════
-   AI API CALLS — HF InstructPix2Pix
-══════════════════════════════════════════════════════ */
-async function callAI(imageFile, prompt, negPrompt){
-  const b64=await fileToBase64(imageFile);
-
-  /* Method 1: With HF token — direct Inference API */
-  if(HF_TOKEN){
-    return await callHFInference(b64, prompt, negPrompt, HF_TOKEN);
-  }
-
-  /* Method 2: No token — HF Gradio Space (public, no auth) */
-  return await callGradioSpace(b64, prompt, negPrompt);
-}
-
-/* ── HF Inference API (with token) ── */
-async function callHFInference(b64, prompt, negPrompt, token){
-  const MODEL='timbrooks/instruct-pix2pix';
-  const url=`https://api-inference.huggingface.co/models/${MODEL}`;
-
-  const resp=await fetch(url,{
-    method:'POST',
-    headers:{
-      'Authorization':`Bearer ${token}`,
-      'Content-Type':'application/json',
-      'X-Wait-For-Model':'true',
-    },
-    body:JSON.stringify({
-      inputs: prompt,
-      parameters:{
-        image: b64,
-        negative_prompt: negPrompt,
-        num_inference_steps: 25,
-        image_guidance_scale: 1.6,   // High = preserves original content
-        guidance_scale: 7.5,
-        seed: Math.floor(Math.random()*99999),
-      }
-    })
-  });
-
-  if(resp.status===503){
-    // Model loading — wait and retry
-    await sleep(25000);
-    return callHFInference(b64,prompt,negPrompt,token);
-  }
-  if(!resp.ok){
-    const e=await resp.json().catch(()=>({}));
-    throw new Error(e.error||`HF API error ${resp.status}`);
-  }
-  return await resp.blob();
-}
-
-/* ── Public HF Gradio Space (no token) ── */
-async function callGradioSpace(b64, prompt, negPrompt){
-  const SPACE='https://timbrooks-instruct-pix2pix.hf.space';
-
-  // First, try to wake the space
-  const resp=await fetch(`${SPACE}/run/predict`,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      fn_index:1,
-      data:[
-        {name:'input.jpg', data:b64, is_file:false},
-        prompt,
-        7.5,   // text guidance scale
-        1.6,   // image guidance scale (HIGH = preserve original)
-        25,    // inference steps
-        Math.floor(Math.random()*99999),  // seed
-      ]
-    })
-  });
-
-  if(!resp.ok){
-    throw new Error(`Space error ${resp.status}. HF token add karo ⚙️ button se.`);
-  }
-
-  const result=await resp.json();
-  if(result.error) throw new Error(result.error);
-
-  // Parse response (Gradio returns base64 image)
-  const imgData=result.data?.[0];
-  if(!imgData) throw new Error('No output from AI. Retry karo.');
-
-  const dataStr = typeof imgData==='string' ? imgData : imgData.data||imgData.url||'';
-  if(!dataStr) throw new Error('Empty AI response.');
-
-  // Convert to blob
-  if(dataStr.startsWith('data:')){
-    const [hdr,d]=dataStr.split(',');
-    const mime=hdr.split(':')[1].split(';')[0];
-    return b64ToBlob(d,mime);
-  }
-  if(dataStr.startsWith('http')){
-    const r=await fetch(dataStr);
-    return await r.blob();
-  }
-  return b64ToBlob(dataStr,'image/png');
-}
-
-/* ══════════════════════════════════════════════════════
-   DOWNLOAD + COMPARISON
-══════════════════════════════════════════════════════ */
-function buildDownload(count,isSingle){
-  document.getElementById('dlH').textContent=count+' image'+(count!==1?'s':'')+' ready!';
-  if(isSingle&&A.results.length){
-    const r=A.results[0];
-    document.getElementById('dlBtn').textContent='⬇️ Download Image (PNG)';
-    document.getElementById('csAfter').src=URL.createObjectURL(r.blob);
-    document.getElementById('csBefore').src=URL.createObjectURL(r.orig);
-    document.getElementById('csWrap').style.display='';
-    document.getElementById('resGrid').innerHTML='';
-    initCS();
-  } else {
-    document.getElementById('dlBtn').textContent='⬇️ Download All as ZIP';
-    document.getElementById('csWrap').style.display='none';
-    buildResGrid();
-  }
-}
-function buildResGrid(){
-  const g=document.getElementById('resGrid');g.innerHTML='';
-  A.results.forEach(r=>{
-    const c=document.createElement('div');c.className='rc';
-    c.innerHTML=`<div class="rc-imgs"><img src="${URL.createObjectURL(r.orig)}"/><img src="${URL.createObjectURL(r.blob)}"/></div><div class="rc-lbls"><div class="rc-lb">Original</div><div class="rc-lb">✓ AI Changed</div></div><div class="rc-ft"><div class="rc-fn">${r.name}</div><span class="pill ok" style="padding:2px 8px;font-size:9px">✓</span></div>`;
-    g.appendChild(c);
-  });
-}
-function initCS(){
-  const wrap=document.getElementById('csEl');
-  const before=wrap.querySelector('.cs-before');
-  const div=document.getElementById('csDiv');
-  let drag=false;
-  const set=x=>{const r=wrap.getBoundingClientRect();const p=Math.max(5,Math.min(95,(x-r.left)/r.width*100));before.style.clipPath=`inset(0 ${100-p}% 0 0)`;div.style.left=p+'%';};
-  div.addEventListener('mousedown',()=>drag=true);
-  wrap.addEventListener('mousemove',e=>{if(drag)set(e.clientX);});
-  document.addEventListener('mouseup',()=>drag=false);
-  div.addEventListener('touchstart',e=>{drag=true;e.preventDefault();},{passive:false});
-  wrap.addEventListener('touchmove',e=>{if(drag){set(e.touches[0].clientX);e.preventDefault();}},{passive:false});
-  document.addEventListener('touchend',()=>drag=false);
-  set(wrap.getBoundingClientRect().left+wrap.offsetWidth*.5);
-}
-window.doDownload=async()=>{
-  const btn=document.getElementById('dlBtn'); btn.disabled=true;
-  if(A.images.length===1&&A.results.length){
-    saveAs(A.results[0].blob,A.results[0].name);
-    toast('Downloaded! ✓','ok'); btn.disabled=false; return;
-  }
-  btn.innerHTML='<span class="spin"></span> Creating ZIP...';
-  try{
-    const zip=new JSZip(); const folder=zip.folder('ai_bg_changed');
-    A.results.forEach(r=>folder.file(r.name,r.blob));
-    const zb=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:2}},
-      m=>{btn.innerHTML=`<span class="spin"></span> ${Math.round(m.percent)}%`;});
-    saveAs(zb,'BG_Changer_AI_'+Date.now()+'.zip');
-    toast(A.results.length+' images downloaded!','ok');
-  }catch(e){toast('Download failed.','err');console.error(e);}
-  finally{btn.disabled=false;btn.innerHTML='⬇️ Download All as ZIP';}
-};
-window.processMore=()=>{
-  A.images=[]; A.results=[];
-  document.getElementById('slotsHdr').style.display='none';
-  document.getElementById('slotsGrid').style.display='none';
-  document.getElementById('mainZone').style.display='';
-  mainInput.value='';
-  document.getElementById('toStep2').disabled=true;
-  goStep(1);
-};
-
-/* ══════════════════════════════════════════════════════
-   UTILS
-══════════════════════════════════════════════════════ */
-function fileToBase64(file){
-  return new Promise((res,rej)=>{
-    const r=new FileReader();
-    r.onload=e=>res(e.target.result);
-    r.onerror=rej;
-    r.readAsDataURL(file);
-  });
-}
-function b64ToBlob(b64,mime='image/png'){
-  const binary=atob(b64); const arr=new Uint8Array(binary.length);
-  for(let i=0;i<binary.length;i++) arr[i]=binary.charCodeAt(i);
-  return new Blob([arr],{type:mime});
-}
-function noExt(n){return n.replace(/\.[^.]+$/,'');}
-function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
-function toast(msg,type='info'){
-  const box=document.getElementById('toastBox');
-  const el=document.createElement('div');
-  el.className='toast '+type;
-  el.innerHTML=`<span>${{ok:'✅',err:'❌',info:'💡',warn:'⚠️'}[type]||'ℹ'}</span> ${msg}`;
-  box.appendChild(el);
-  setTimeout(()=>{el.style.animation='tOut .28s ease forwards';setTimeout(()=>el.remove(),300);},4000);
-}
-window.toast=toast;
-
-/* Global drag prevention */
-window.addEventListener('dragover',e=>e.preventDefault(),false);
-window.addEventListener('drop',e=>{if(!e.target.closest('.ulbl,.slot')){e.preventDefault();e.stopPropagation();}},false);
-
-/* PWA */
-if('serviceWorker'in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
-</script>
+<script type="module" src="script.js"></script>
 </body>
 </html>
